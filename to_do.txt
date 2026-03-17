@@ -1,0 +1,9 @@
+El 3D no funciona (sí funciona pero va muy lento a veces, tal vez se podría optimizar)
+Cambiar layout a Bento grid Dashboard
+Solucionar el issue que salía
+Escala de verdes en el mapamundi para que no salgan países en negro
+Revisar gráfico de actividad por hora del día
+Poner todos los años en el gráfico de streams por año (en las labels)
+Revisar si funciona al subir únicamente la carpeta que llega de spotify
+Se podría hacer algo con la columna que indica cómo se terminó la canción (porcentaje de canciones mas skipeadas, canción mas skipeada)
+
