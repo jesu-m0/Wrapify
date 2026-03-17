@@ -6,4 +6,6 @@ Revisar gráfico de actividad por hora del día
 Poner todos los años en el gráfico de streams por año (en las labels)
 Revisar si funciona al subir únicamente la carpeta que llega de spotify
 Se podría hacer algo con la columna que indica cómo se terminó la canción (porcentaje de canciones mas skipeadas, canción mas skipeada)
+Top canciones por año
+Número canciones más escuchadas en un día
 
