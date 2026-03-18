@@ -8,4 +8,6 @@ Revisar si funciona al subir únicamente la carpeta que llega de spotify
 Se podría hacer algo con la columna que indica cómo se terminó la canción (porcentaje de canciones mas skipeadas, canción mas skipeada)
 Top canciones por año
 Número canciones más escuchadas en un día
+Poder elegir un mes y que salga el top de ese mes o en un período de tiempo
+Poner enlaces a la wikipedia del artista??
 
