@@ -7,7 +7,10 @@ Poner todos los años en el gráfico de streams por año (en las labels)
 Revisar si funciona al subir únicamente la carpeta que llega de spotify
 Se podría hacer algo con la columna que indica cómo se terminó la canción (porcentaje de canciones mas skipeadas, canción mas skipeada)
 Top canciones por año
-Número canciones más escuchadas en un día
-Poder elegir un mes y que salga el top de ese mes o en un período de tiempo
+Número canciones más escuchadas en un día (una lista con el nombre de la canción, el día y el número de veces que se escuchó)
+Poder elegir un mes y que salga el top de ese mes o en un período de tiempo (lista y gráfica como las que ya tenemos)
+En la gráfica de las canciones poner también el número total de escuchas de las canciones elegidas
+El período de escucha ponerlo arriba al lado de Wrapify con una frase tipo: "2014-2026, 12 años de música"
+Donde está puesto el período ahora, poner el día con mas canciones escuchadas
 Poner enlaces a la wikipedia del artista??
 
