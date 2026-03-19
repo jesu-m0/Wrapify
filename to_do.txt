@@ -15,4 +15,7 @@ El período de escucha ponerlo arriba al lado de Wrapify con una frase tipo: "20
 Donde está puesto el período ahora, poner el día con mas canciones escuchadas
 Poner enlaces a la wikipedia del artista??
 - 3rd button of the mouse deletes song/artist
+- fecha slider que pueda pasar al dia despues o al de antes con una flechita. en el calendario que haya dos selectores. mes y año
+
+- la escala en el mapamundi sea asi, no es lo mismo 20k que 80k
 

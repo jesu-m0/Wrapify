@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { SpotifyStream } from "@/types/spotify";
 import PlotlyChart from "./PlotlyChart";
 import Autocomplete from "./Autocomplete";
@@ -148,7 +148,47 @@ const MONTH_NAMES = [
   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
 ];
 
+function SongCard({ song, index }: { song: { time: string; track: string; artist: string; album: string; minutesPlayed: number }; index: number }) {
+  const mins = Math.floor(song.minutesPlayed);
+  const secs = Math.round((song.minutesPlayed - mins) * 60);
+  return (
+    <div className="group flex items-center gap-3 rounded-lg bg-zinc-800/40 p-3 hover:bg-zinc-700/50 transition-colors">
+      {/* Track number / time */}
+      <div className="shrink-0 w-10 text-center">
+        <span className="text-sm font-medium text-zinc-500 group-hover:text-zinc-300 transition-colors">
+          {index + 1}
+        </span>
+      </div>
+      {/* Album art placeholder */}
+      <div className="shrink-0 h-10 w-10 rounded bg-zinc-700 flex items-center justify-center">
+        <svg className="w-5 h-5 text-zinc-500" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+        </svg>
+      </div>
+      {/* Song info */}
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-zinc-100">{song.track}</p>
+        <p className="truncate text-xs text-zinc-400">{song.artist}</p>
+      </div>
+      {/* Album */}
+      <span className="hidden sm:block truncate text-xs text-zinc-500 max-w-[150px]">
+        {song.album}
+      </span>
+      {/* Time played */}
+      <span className="shrink-0 text-xs text-zinc-500 font-mono w-14 text-right">
+        {song.time}
+      </span>
+      {/* Duration */}
+      <span className="shrink-0 text-xs text-zinc-500 font-mono w-12 text-right">
+        {mins}:{String(secs).padStart(2, "0")}
+      </span>
+    </div>
+  );
+}
+
 function TimelineCard({ data }: { data: SpotifyStream[] }) {
+  const [tab, setTab] = useState<"calendar" | "slider">("calendar");
+
   const [viewYear, setViewYear] = useState(() => {
     const years = data.map((s) => s.year);
     return Math.max(...years);
@@ -172,18 +212,28 @@ function TimelineCard({ data }: { data: SpotifyStream[] }) {
     [data, selectedDate]
   );
 
+  // Sorted unique dates for the slider
+  const allDates = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of data) set.add(s.date);
+    return Array.from(set).sort();
+  }, [data]);
+
+  const sliderIndex = useMemo(() => {
+    if (!selectedDate) return allDates.length - 1;
+    const idx = allDates.indexOf(selectedDate);
+    return idx === -1 ? allDates.length - 1 : idx;
+  }, [allDates, selectedDate]);
+
   // Build calendar grid for viewYear/viewMonth
   const calendarDays = useMemo(() => {
     const firstDay = new Date(viewYear, viewMonth - 1, 1);
     const daysInMonth = new Date(viewYear, viewMonth, 0).getDate();
-    // JS getDay: 0=Sun, we want Mon=0
     let startWeekday = firstDay.getDay() - 1;
     if (startWeekday < 0) startWeekday = 6;
-
     const cells: (number | null)[] = [];
     for (let i = 0; i < startWeekday; i++) cells.push(null);
     for (let d = 1; d <= daysInMonth; d++) cells.push(d);
-    // Pad to complete last row
     while (cells.length % 7 !== 0) cells.push(null);
     return cells;
   }, [viewYear, viewMonth]);
@@ -216,65 +266,240 @@ function TimelineCard({ data }: { data: SpotifyStream[] }) {
 
   const totalForDay = selectedDate ? (counts.get(selectedDate) || 0) : 0;
 
+  // Debounced slider: preview date updates instantly, song list is debounced
+  const [sliderPreviewDate, setSliderPreviewDate] = useState<string | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleSliderChange = useCallback(
+    (idx: number) => {
+      const date = allDates[idx];
+      if (!date) return;
+      // Instant: update the preview label
+      setSliderPreviewDate(date);
+      // Debounced: update the actual selected date (triggers song list compute)
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        setSelectedDate(date);
+        const [y, m] = date.split("-").map(Number);
+        setViewYear(y);
+        setViewMonth(m);
+        setSliderPreviewDate(null);
+      }, 250);
+    },
+    [allDates]
+  );
+
+  // The date shown in the slider header: preview (while dragging) or selected
+  const sliderDisplayDate = sliderPreviewDate ?? selectedDate ?? allDates[allDates.length - 1];
+  const sliderDisplayCount = sliderPreviewDate
+    ? counts.get(sliderPreviewDate) || 0
+    : totalForDay;
+
+  // Format a date string nicely for the slider display
+  const formatNiceDate = (dateStr: string) => {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const jsDate = new Date(y, m - 1, d);
+    const weekday = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"][jsDate.getDay()];
+    return `${weekday}, ${d} ${MONTH_NAMES[m - 1]} ${y}`;
+  };
+
+  // Slider progress percentage
+  const sliderProgress = allDates.length > 1 ? (sliderIndex / (allDates.length - 1)) * 100 : 0;
+  const sliderPreviewProgress = useMemo(() => {
+    if (!sliderPreviewDate) return null;
+    const idx = allDates.indexOf(sliderPreviewDate);
+    if (idx === -1) return null;
+    return (idx / (allDates.length - 1)) * 100;
+  }, [allDates, sliderPreviewDate]);
+  const currentProgress = sliderPreviewProgress ?? sliderProgress;
+
+  // Year + quarter tick marks for the slider
+  const sliderTicks = useMemo(() => {
+    if (allDates.length < 2) return [];
+    const firstDate = allDates[0];
+    const lastDate = allDates[allDates.length - 1];
+    const startYear = Number(firstDate.slice(0, 4));
+    const endYear = Number(lastDate.slice(0, 4));
+    const totalDates = allDates.length - 1;
+
+    // Helper: find the index of the closest date to a target YYYY-MM-DD
+    const findClosestIdx = (target: string) => {
+      // Binary search for the closest date
+      let lo = 0, hi = allDates.length - 1;
+      while (lo < hi) {
+        const mid = (lo + hi) >> 1;
+        if (allDates[mid] < target) lo = mid + 1;
+        else hi = mid;
+      }
+      return lo;
+    };
+
+    const ticks: { pct: number; label?: string }[] = [];
+    for (let y = startYear; y <= endYear; y++) {
+      // Year mark: Jan 1
+      const yearTarget = `${y}-01-01`;
+      const yi = findClosestIdx(yearTarget);
+      ticks.push({ pct: (yi / totalDates) * 100, label: String(y) });
+
+      // Quarter dots: Apr 1, Jul 1, Oct 1
+      for (const qm of ["04", "07", "10"]) {
+        const qTarget = `${y}-${qm}-01`;
+        if (qTarget > lastDate) break;
+        if (qTarget < firstDate) continue;
+        const qi = findClosestIdx(qTarget);
+        ticks.push({ pct: (qi / totalDates) * 100 });
+      }
+    }
+    return ticks;
+  }, [allDates]);
+
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
-      <h3 className="mb-4 text-base font-semibold text-zinc-100">Timeline</h3>
-
-      {/* Month navigation */}
-      <div className="mb-4 flex items-center justify-center gap-4">
-        <button
-          onClick={() => navigate(-1)}
-          className="rounded-lg border border-zinc-700 px-3 py-1.5 text-sm text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-colors"
-        >
-          &larr;
-        </button>
-        <span className="min-w-[180px] text-center text-lg font-semibold text-zinc-100">
-          {MONTH_NAMES[viewMonth - 1]} {viewYear}
-        </span>
-        <button
-          onClick={() => navigate(1)}
-          className="rounded-lg border border-zinc-700 px-3 py-1.5 text-sm text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-colors"
-        >
-          &rarr;
-        </button>
+      {/* Header with tabs */}
+      <div className="mb-5 flex items-center justify-between">
+        <h3 className="text-base font-semibold text-zinc-100">Timeline</h3>
+        <div className="flex rounded-lg bg-zinc-800 p-0.5">
+          <button
+            onClick={() => setTab("calendar")}
+            className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+              tab === "calendar"
+                ? "bg-green-600 text-white"
+                : "text-zinc-400 hover:text-zinc-200"
+            }`}
+          >
+            Calendario
+          </button>
+          <button
+            onClick={() => setTab("slider")}
+            className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+              tab === "slider"
+                ? "bg-green-600 text-white"
+                : "text-zinc-400 hover:text-zinc-200"
+            }`}
+          >
+            Slider
+          </button>
+        </div>
       </div>
 
-      {/* Calendar grid */}
-      <div className="mx-auto max-w-md">
-        {/* Header row */}
-        <div className="grid grid-cols-7 gap-1 mb-1">
-          {DAY_NAMES.map((d) => (
-            <div key={d} className="text-center text-xs text-zinc-500 py-1">
-              {d}
+      {/* === CALENDAR TAB === */}
+      {tab === "calendar" && (
+        <>
+          {/* Month navigation */}
+          <div className="mb-4 flex items-center justify-center gap-4">
+            <button
+              onClick={() => navigate(-1)}
+              className="rounded-lg border border-zinc-700 px-3 py-1.5 text-sm text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-colors"
+            >
+              &larr;
+            </button>
+            <span className="min-w-[180px] text-center text-lg font-semibold text-zinc-100">
+              {MONTH_NAMES[viewMonth - 1]} {viewYear}
+            </span>
+            <button
+              onClick={() => navigate(1)}
+              className="rounded-lg border border-zinc-700 px-3 py-1.5 text-sm text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-colors"
+            >
+              &rarr;
+            </button>
+          </div>
+
+          {/* Calendar grid */}
+          <div className="mx-auto max-w-md">
+            <div className="grid grid-cols-7 gap-1 mb-1">
+              {DAY_NAMES.map((d) => (
+                <div key={d} className="text-center text-xs text-zinc-500 py-1">{d}</div>
+              ))}
             </div>
-          ))}
+            <div className="grid grid-cols-7 gap-1">
+              {calendarDays.map((day, i) =>
+                day === null ? (
+                  <div key={`empty-${i}`} className="aspect-square" />
+                ) : (
+                  <button
+                    key={day}
+                    onClick={() => setSelectedDate(formatDate(day))}
+                    className={`aspect-square rounded-md flex flex-col items-center justify-center text-xs transition-all ${getDayIntensity(day)} ${
+                      selectedDate === formatDate(day)
+                        ? "ring-2 ring-green-400 ring-offset-1 ring-offset-zinc-950"
+                        : "hover:ring-1 hover:ring-zinc-600"
+                    }`}
+                  >
+                    <span className="font-medium text-zinc-200">{day}</span>
+                    {(counts.get(formatDate(day)) || 0) > 0 && (
+                      <span className="text-[10px] text-zinc-400">
+                        {counts.get(formatDate(day))}
+                      </span>
+                    )}
+                  </button>
+                )
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* === SLIDER TAB === */}
+      {tab === "slider" && (
+        <div className="space-y-4">
+          {/* Current date display */}
+          <div className="text-center">
+            <p className="text-2xl font-bold text-zinc-100">
+              {formatNiceDate(sliderDisplayDate)}
+            </p>
+            <p className="mt-1 text-sm text-zinc-500">
+              {sliderDisplayCount} {sliderDisplayCount === 1 ? "stream" : "streams"}
+            </p>
+          </div>
+
+          {/* Slider track */}
+          <div className="px-2">
+            <div className="relative h-6 flex items-center">
+              {/* Background bar */}
+              <div className="h-1 w-full rounded-full bg-zinc-700" />
+              {/* Progress fill */}
+              <div
+                className="absolute top-1/2 -translate-y-1/2 left-0 h-1 rounded-full bg-green-500"
+                style={{ width: `${currentProgress}%` }}
+              />
+              {/* Thumb dot */}
+              <div
+                className="absolute top-1/2 -translate-y-1/2 h-3 w-3 rounded-full bg-white shadow-md shadow-black/30 pointer-events-none"
+                style={{ left: `calc(${currentProgress}% - 6px)` }}
+              />
+              {/* Invisible range input on top */}
+              <input
+                type="range"
+                min={0}
+                max={allDates.length - 1}
+                value={sliderPreviewDate ? allDates.indexOf(sliderPreviewDate) : sliderIndex}
+                onChange={(e) => handleSliderChange(Number(e.target.value))}
+                className="absolute top-0 left-0 h-full w-full cursor-pointer opacity-0"
+                style={{ margin: 0 }}
+              />
+            </div>
+            {/* Year + quarter tick marks */}
+            <div className="relative h-5 mt-1">
+              {sliderTicks.map((tick, i) => (
+                <div
+                  key={i}
+                  className="absolute -translate-x-1/2 flex flex-col items-center"
+                  style={{ left: `${tick.pct}%` }}
+                >
+                  {tick.label ? (
+                    <>
+                      <div className="w-px h-2 bg-zinc-500" />
+                      <span className="text-[10px] text-zinc-500 mt-0.5">{tick.label}</span>
+                    </>
+                  ) : (
+                    <div className="w-1 h-1 rounded-full bg-zinc-600 mt-0.5" />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-        {/* Day cells */}
-        <div className="grid grid-cols-7 gap-1">
-          {calendarDays.map((day, i) =>
-            day === null ? (
-              <div key={`empty-${i}`} className="aspect-square" />
-            ) : (
-              <button
-                key={day}
-                onClick={() => setSelectedDate(formatDate(day))}
-                className={`aspect-square rounded-md flex flex-col items-center justify-center text-xs transition-all ${getDayIntensity(day)} ${
-                  selectedDate === formatDate(day)
-                    ? "ring-2 ring-green-400 ring-offset-1 ring-offset-zinc-950"
-                    : "hover:ring-1 hover:ring-zinc-600"
-                }`}
-              >
-                <span className="font-medium text-zinc-200">{day}</span>
-                {(counts.get(formatDate(day)) || 0) > 0 && (
-                  <span className="text-[10px] text-zinc-400">
-                    {counts.get(formatDate(day))}
-                  </span>
-                )}
-              </button>
-            )
-          )}
-        </div>
-      </div>
+      )}
 
       {/* Song list for selected day */}
       {selectedDate && (
@@ -296,27 +521,22 @@ function TimelineCard({ data }: { data: SpotifyStream[] }) {
           {daySongs.length === 0 ? (
             <p className="text-sm text-zinc-500">No hay canciones este día.</p>
           ) : (
-            <div className="max-h-80 overflow-y-auto space-y-1 pr-1">
-              {daySongs.map((song, i) => (
-                <div
-                  key={`${song.time}-${song.track}-${i}`}
-                  className="flex items-center gap-3 rounded-lg bg-zinc-800/50 px-3 py-2"
-                >
-                  <span className="shrink-0 text-xs font-mono text-zinc-500 w-12">
-                    {song.time}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm text-zinc-200">{song.track}</p>
-                    <p className="truncate text-xs text-zinc-500">
-                      {song.artist} &middot; {song.album}
-                    </p>
-                  </div>
-                  <span className="shrink-0 text-xs text-zinc-500">
-                    {song.minutesPlayed} min
-                  </span>
-                </div>
-              ))}
-            </div>
+            <>
+              {/* Spotify-style list header */}
+              <div className="flex items-center gap-3 px-3 pb-2 border-b border-zinc-800 text-[11px] uppercase tracking-wider text-zinc-600">
+                <span className="w-10 text-center">#</span>
+                <span className="w-10" />
+                <span className="flex-1">Título</span>
+                <span className="hidden sm:block w-[150px]">Álbum</span>
+                <span className="w-14 text-right">Hora</span>
+                <span className="w-12 text-right">Dur.</span>
+              </div>
+              <div className="max-h-96 overflow-y-auto space-y-0.5 pt-1 pr-1">
+                {daySongs.map((song, i) => (
+                  <SongCard key={`${song.time}-${song.track}-${i}`} song={song} index={i} />
+                ))}
+              </div>
+            </>
           )}
         </div>
       )}
@@ -807,17 +1027,36 @@ export default function Dashboard({ data }: DashboardProps) {
               type: "choropleth",
               locationmode: "ISO-3" as const,
               locations: countriesAll.map((c) => iso2ToIso3(c.name)),
-              z: countriesAll.map((c) => c.count),
+              z: countriesAll.map((c) => {
+                const n = c.count;
+                if (n <= 50) return 1;
+                if (n <= 200) return 2;
+                if (n <= 1000) return 3;
+                if (n <= 5000) return 4;
+                if (n <= 20000) return 5;
+                return 6;
+              }),
+              zmin: 1,
+              zmax: 6,
               text: countriesAll.map(
                 (c) => `${c.name}: ${c.count.toLocaleString()} streams`
               ),
               hoverinfo: "text" as const,
-              colorscale: [[0, "#09090b"], [0.3, "#166534"], [1, "#1ed760"]],
+              colorscale: [
+                [0, "#14532d"],
+                [0.2, "#166534"],
+                [0.4, "#15803d"],
+                [0.6, "#22c55e"],
+                [0.8, "#4ade80"],
+                [1, "#1ed760"],
+              ],
               colorbar: {
                 title: { text: "Streams", font: { color: "#a1a1aa" } },
                 tickfont: { color: "#a1a1aa" },
+                tickvals: [1, 2, 3, 4, 5, 6],
+                ticktext: ["1–50", "51–200", "201–1k", "1k–5k", "5k–20k", "20k+"],
               },
-              marker: { line: { color: "#27272a", width: 0.5 } },
+              marker: { line: { color: "#22c55e", width: 1 } },
             },
           ]}
           layout={{
