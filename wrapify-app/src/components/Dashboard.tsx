@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { SpotifyStream } from "@/types/spotify";
 import PlotlyChart from "./PlotlyChart";
 import Autocomplete from "./Autocomplete";
@@ -24,6 +24,8 @@ import {
   allTrackKeys,
   countryDistributionAll,
   iso2ToIso3,
+  songsForDay,
+  dailyStreamCounts,
   CountItem,
 } from "@/lib/stats";
 
@@ -140,6 +142,188 @@ function TagList({ tags, onRemove }: { tags: string[]; onRemove: (tag: string) =
   );
 }
 
+const DAY_NAMES = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+const MONTH_NAMES = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+];
+
+function TimelineCard({ data }: { data: SpotifyStream[] }) {
+  const [viewYear, setViewYear] = useState(() => {
+    const years = data.map((s) => s.year);
+    return Math.max(...years);
+  });
+  const [viewMonth, setViewMonth] = useState(() => {
+    const latest = data.reduce((best, s) => (s.ts > best.ts ? s : best), data[0]);
+    return latest.month;
+  });
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+
+  const counts = useMemo(() => dailyStreamCounts(data), [data]);
+
+  const maxCount = useMemo(() => {
+    let max = 0;
+    for (const c of counts.values()) if (c > max) max = c;
+    return max;
+  }, [counts]);
+
+  const daySongs = useMemo(
+    () => (selectedDate ? songsForDay(data, selectedDate) : []),
+    [data, selectedDate]
+  );
+
+  // Build calendar grid for viewYear/viewMonth
+  const calendarDays = useMemo(() => {
+    const firstDay = new Date(viewYear, viewMonth - 1, 1);
+    const daysInMonth = new Date(viewYear, viewMonth, 0).getDate();
+    // JS getDay: 0=Sun, we want Mon=0
+    let startWeekday = firstDay.getDay() - 1;
+    if (startWeekday < 0) startWeekday = 6;
+
+    const cells: (number | null)[] = [];
+    for (let i = 0; i < startWeekday; i++) cells.push(null);
+    for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+    // Pad to complete last row
+    while (cells.length % 7 !== 0) cells.push(null);
+    return cells;
+  }, [viewYear, viewMonth]);
+
+  const navigate = useCallback(
+    (dir: -1 | 1) => {
+      let m = viewMonth + dir;
+      let y = viewYear;
+      if (m < 1) { m = 12; y--; }
+      if (m > 12) { m = 1; y++; }
+      setViewMonth(m);
+      setViewYear(y);
+      setSelectedDate(null);
+    },
+    [viewMonth, viewYear]
+  );
+
+  const formatDate = (day: number) =>
+    `${viewYear}-${String(viewMonth).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+
+  const getDayIntensity = (day: number): string => {
+    const count = counts.get(formatDate(day)) || 0;
+    if (count === 0) return "bg-zinc-800/50";
+    const ratio = count / maxCount;
+    if (ratio < 0.25) return "bg-green-900/60";
+    if (ratio < 0.5) return "bg-green-700/70";
+    if (ratio < 0.75) return "bg-green-600/80";
+    return "bg-green-500";
+  };
+
+  const totalForDay = selectedDate ? (counts.get(selectedDate) || 0) : 0;
+
+  return (
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+      <h3 className="mb-4 text-base font-semibold text-zinc-100">Timeline</h3>
+
+      {/* Month navigation */}
+      <div className="mb-4 flex items-center justify-center gap-4">
+        <button
+          onClick={() => navigate(-1)}
+          className="rounded-lg border border-zinc-700 px-3 py-1.5 text-sm text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-colors"
+        >
+          &larr;
+        </button>
+        <span className="min-w-[180px] text-center text-lg font-semibold text-zinc-100">
+          {MONTH_NAMES[viewMonth - 1]} {viewYear}
+        </span>
+        <button
+          onClick={() => navigate(1)}
+          className="rounded-lg border border-zinc-700 px-3 py-1.5 text-sm text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-colors"
+        >
+          &rarr;
+        </button>
+      </div>
+
+      {/* Calendar grid */}
+      <div className="mx-auto max-w-md">
+        {/* Header row */}
+        <div className="grid grid-cols-7 gap-1 mb-1">
+          {DAY_NAMES.map((d) => (
+            <div key={d} className="text-center text-xs text-zinc-500 py-1">
+              {d}
+            </div>
+          ))}
+        </div>
+        {/* Day cells */}
+        <div className="grid grid-cols-7 gap-1">
+          {calendarDays.map((day, i) =>
+            day === null ? (
+              <div key={`empty-${i}`} className="aspect-square" />
+            ) : (
+              <button
+                key={day}
+                onClick={() => setSelectedDate(formatDate(day))}
+                className={`aspect-square rounded-md flex flex-col items-center justify-center text-xs transition-all ${getDayIntensity(day)} ${
+                  selectedDate === formatDate(day)
+                    ? "ring-2 ring-green-400 ring-offset-1 ring-offset-zinc-950"
+                    : "hover:ring-1 hover:ring-zinc-600"
+                }`}
+              >
+                <span className="font-medium text-zinc-200">{day}</span>
+                {(counts.get(formatDate(day)) || 0) > 0 && (
+                  <span className="text-[10px] text-zinc-400">
+                    {counts.get(formatDate(day))}
+                  </span>
+                )}
+              </button>
+            )
+          )}
+        </div>
+      </div>
+
+      {/* Song list for selected day */}
+      {selectedDate && (
+        <div className="mt-6">
+          <div className="mb-3 flex items-center justify-between">
+            <h4 className="text-sm font-semibold text-zinc-100">
+              {selectedDate}{" "}
+              <span className="font-normal text-zinc-400">
+                ({totalForDay} {totalForDay === 1 ? "stream" : "streams"})
+              </span>
+            </h4>
+            <button
+              onClick={() => setSelectedDate(null)}
+              className="text-xs text-zinc-500 hover:text-zinc-100"
+            >
+              Cerrar
+            </button>
+          </div>
+          {daySongs.length === 0 ? (
+            <p className="text-sm text-zinc-500">No hay canciones este día.</p>
+          ) : (
+            <div className="max-h-80 overflow-y-auto space-y-1 pr-1">
+              {daySongs.map((song, i) => (
+                <div
+                  key={`${song.time}-${song.track}-${i}`}
+                  className="flex items-center gap-3 rounded-lg bg-zinc-800/50 px-3 py-2"
+                >
+                  <span className="shrink-0 text-xs font-mono text-zinc-500 w-12">
+                    {song.time}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm text-zinc-200">{song.track}</p>
+                    <p className="truncate text-xs text-zinc-500">
+                      {song.artist} &middot; {song.album}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-xs text-zinc-500">
+                    {song.minutesPlayed} min
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Dashboard({ data }: DashboardProps) {
   const [topNSongs, setTopNSongs] = useState(10);
   const [topNArtists, setTopNArtists] = useState(10);
@@ -221,6 +405,9 @@ export default function Dashboard({ data }: DashboardProps) {
           </span>
         </p>
       </div>
+
+      {/* Timeline */}
+      <TimelineCard data={data} />
 
       {/* Rankings */}
       <div className="grid gap-4 md:grid-cols-2">

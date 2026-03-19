@@ -284,6 +284,35 @@ export function allTrackKeys(streams: SpotifyStream[]): { track: string; artist:
   return results.sort((a, b) => `${a.track} - ${a.artist}`.localeCompare(`${b.track} - ${b.artist}`));
 }
 
+export interface DaySong {
+  time: string;       // HH:MM
+  track: string;
+  artist: string;
+  album: string;
+  minutesPlayed: number;
+}
+
+export function songsForDay(streams: SpotifyStream[], date: string): DaySong[] {
+  return streams
+    .filter((s) => s.date === date)
+    .sort((a, b) => a.ts.localeCompare(b.ts))
+    .map((s) => ({
+      time: s.ts.slice(11, 16),
+      track: s.master_metadata_track_name || "Unknown",
+      artist: s.master_metadata_album_artist_name || "Unknown",
+      album: s.master_metadata_album_album_name || "Unknown",
+      minutesPlayed: Math.round(s.minutes_played * 10) / 10,
+    }));
+}
+
+export function dailyStreamCounts(streams: SpotifyStream[]): Map<string, number> {
+  const map = new Map<string, number>();
+  for (const s of streams) {
+    map.set(s.date, (map.get(s.date) || 0) + 1);
+  }
+  return map;
+}
+
 export function summaryStats(streams: SpotifyStream[]) {
   const uniqueArtists = new Set(streams.map((s) => s.master_metadata_album_artist_name)).size;
   const uniqueTracks = new Set(streams.map((s) => s.master_metadata_track_name)).size;

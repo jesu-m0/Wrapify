@@ -1,16 +1,18 @@
-El 3D no funciona (sí funciona pero va muy lento a veces, tal vez se podría optimizar)
-Cambiar layout a Bento grid Dashboard
-Solucionar el issue que salía
-Escala de verdes en el mapamundi para que no salgan países en negro
-Revisar gráfico de actividad por hora del día
-Poner todos los años en el gráfico de streams por año (en las labels)
-Revisar si funciona al subir únicamente la carpeta que llega de spotify
-Se podría hacer algo con la columna que indica cómo se terminó la canción (porcentaje de canciones mas skipeadas, canción mas skipeada)
-Top canciones por año
-Número canciones más escuchadas en un día (una lista con el nombre de la canción, el día y el número de veces que se escuchó)
-Poder elegir un mes y que salga el top de ese mes o en un período de tiempo (lista y gráfica como las que ya tenemos)
-En la gráfica de las canciones poner también el número total de escuchas de las canciones elegidas
+ - El 3D no funciona (sí funciona pero va muy lento a veces, tal vez se podría optimizar)
+ - Cambiar layout a Bento grid Dashboard y que ocupe todo el ancho de pantalla. no se espera que este preparada para movil
+
+- Solucionar el issue que salía
+- Escala de verdes en el mapamundi para que no salgan países en negro
+- Revisar gráfico de actividad por hora del día
+- Poner todos los años en el gráfico de streams por año (en las labels)
+- Revisar si funciona al subir únicamente la carpeta que llega de spotify (hacer guia rapida y que se muestre en tres pasos sencillos en la main page)
+- Se podría hacer algo con la columna que indica cómo se terminó la canción (porcentaje de canciones mas skipeadas, canción mas skipeada) - ME GUSTA.
+- Top canciones por año
+- Número canciones más escuchadas en un día (una lista con el nombre de la canción, el día y el número de veces que se escuchó)
+- Poder elegir un mes y que salga el top de ese mes o en un período de tiempo (lista y gráfica como las que ya tenemos)
+-   En la gráfica de las canciones poner también el número total de escuchas de las canciones elegidas
 El período de escucha ponerlo arriba al lado de Wrapify con una frase tipo: "2014-2026, 12 años de música"
 Donde está puesto el período ahora, poner el día con mas canciones escuchadas
 Poner enlaces a la wikipedia del artista??
+- 3rd button of the mouse deletes song/artist
 
