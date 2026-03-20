@@ -9,7 +9,9 @@
 - Poder elegir un mes y que salga el top de ese mes o en un período de tiempo (lista y gráfica como las que ya tenemos)
 -   En la gráfica de las canciones poner también el número total de escuchas de las canciones elegidas
 El período de escucha ponerlo arriba al lado de Wrapify con una frase tipo: "2014-2026, 12 años de música"
-Donde está puesto el período ahora, poner el día con mas canciones escuchadas
 Poner enlaces a la wikipedia del artista??
 - 3rd button of the mouse deletes song/artist
+- Yo pondría el día con más escuchas con el mismo formato que el resto de elementos de la cabecera y pondría de título "Día con más escuchas" en vez de "Día más escuchado"
+- La gráfica de streams por año hay que centrarla verticalmente con el calendario y el slider
+- De los skips yo creo que hay demasiada info, yo creo que no interesa tanto pero se puede hablar la próxima vez que nos conectemos a DC
 
