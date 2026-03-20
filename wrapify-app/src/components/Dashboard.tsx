@@ -238,18 +238,12 @@ function TimelineCard({ data }: { data: SpotifyStream[] }) {
     return cells;
   }, [viewYear, viewMonth]);
 
-  const navigate = useCallback(
-    (dir: -1 | 1) => {
-      let m = viewMonth + dir;
-      let y = viewYear;
-      if (m < 1) { m = 12; y--; }
-      if (m > 12) { m = 1; y++; }
-      setViewMonth(m);
-      setViewYear(y);
-      setSelectedDate(null);
-    },
-    [viewMonth, viewYear]
-  );
+  // Available years from data
+  const availableYears = useMemo(() => {
+    const set = new Set<number>();
+    for (const s of data) set.add(s.year);
+    return Array.from(set).sort((a, b) => a - b);
+  }, [data]);
 
   const formatDate = (day: number) =>
     `${viewYear}-${String(viewMonth).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -265,6 +259,21 @@ function TimelineCard({ data }: { data: SpotifyStream[] }) {
   };
 
   const totalForDay = selectedDate ? (counts.get(selectedDate) || 0) : 0;
+
+  // Navigate to prev/next day in slider
+  const navigateDay = useCallback(
+    (dir: -1 | 1) => {
+      const currentIdx = selectedDate ? allDates.indexOf(selectedDate) : allDates.length - 1;
+      const newIdx = Math.max(0, Math.min(allDates.length - 1, currentIdx + dir));
+      const date = allDates[newIdx];
+      if (!date) return;
+      setSelectedDate(date);
+      const [y, m] = date.split("-").map(Number);
+      setViewYear(y);
+      setViewMonth(m);
+    },
+    [allDates, selectedDate]
+  );
 
   // Debounced slider: preview date updates instantly, song list is debounced
   const [sliderPreviewDate, setSliderPreviewDate] = useState<string | null>(null);
@@ -313,18 +322,14 @@ function TimelineCard({ data }: { data: SpotifyStream[] }) {
   }, [allDates, sliderPreviewDate]);
   const currentProgress = sliderPreviewProgress ?? sliderProgress;
 
-  // Year + quarter tick marks for the slider
+  // Year tick marks for the slider
   const sliderTicks = useMemo(() => {
     if (allDates.length < 2) return [];
-    const firstDate = allDates[0];
-    const lastDate = allDates[allDates.length - 1];
-    const startYear = Number(firstDate.slice(0, 4));
-    const endYear = Number(lastDate.slice(0, 4));
+    const startYear = Number(allDates[0].slice(0, 4));
+    const endYear = Number(allDates[allDates.length - 1].slice(0, 4));
     const totalDates = allDates.length - 1;
 
-    // Helper: find the index of the closest date to a target YYYY-MM-DD
     const findClosestIdx = (target: string) => {
-      // Binary search for the closest date
       let lo = 0, hi = allDates.length - 1;
       while (lo < hi) {
         const mid = (lo + hi) >> 1;
@@ -334,21 +339,11 @@ function TimelineCard({ data }: { data: SpotifyStream[] }) {
       return lo;
     };
 
-    const ticks: { pct: number; label?: string }[] = [];
-    for (let y = startYear; y <= endYear; y++) {
-      // Year mark: Jan 1
-      const yearTarget = `${y}-01-01`;
-      const yi = findClosestIdx(yearTarget);
+    const ticks: { pct: number; label: string }[] = [];
+    // Skip the first year if data starts mid-year, start from next Jan 1
+    for (let y = startYear + 1; y <= endYear; y++) {
+      const yi = findClosestIdx(`${y}-01-01`);
       ticks.push({ pct: (yi / totalDates) * 100, label: String(y) });
-
-      // Quarter dots: Apr 1, Jul 1, Oct 1
-      for (const qm of ["04", "07", "10"]) {
-        const qTarget = `${y}-${qm}-01`;
-        if (qTarget > lastDate) break;
-        if (qTarget < firstDate) continue;
-        const qi = findClosestIdx(qTarget);
-        ticks.push({ pct: (qi / totalDates) * 100 });
-      }
     }
     return ticks;
   }, [allDates]);
@@ -385,23 +380,26 @@ function TimelineCard({ data }: { data: SpotifyStream[] }) {
       {/* === CALENDAR TAB === */}
       {tab === "calendar" && (
         <>
-          {/* Month navigation */}
-          <div className="mb-4 flex items-center justify-center gap-4">
-            <button
-              onClick={() => navigate(-1)}
-              className="rounded-lg border border-zinc-700 px-3 py-1.5 text-sm text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-colors"
+          {/* Month + Year selectors */}
+          <div className="mb-4 flex items-center justify-center gap-3">
+            <select
+              value={viewMonth}
+              onChange={(e) => { setViewMonth(Number(e.target.value)); setSelectedDate(null); }}
+              className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-100 focus:border-green-500 focus:outline-none cursor-pointer"
             >
-              &larr;
-            </button>
-            <span className="min-w-[180px] text-center text-lg font-semibold text-zinc-100">
-              {MONTH_NAMES[viewMonth - 1]} {viewYear}
-            </span>
-            <button
-              onClick={() => navigate(1)}
-              className="rounded-lg border border-zinc-700 px-3 py-1.5 text-sm text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-colors"
+              {MONTH_NAMES.map((name, i) => (
+                <option key={i} value={i + 1}>{name}</option>
+              ))}
+            </select>
+            <select
+              value={viewYear}
+              onChange={(e) => { setViewYear(Number(e.target.value)); setSelectedDate(null); }}
+              className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-100 focus:border-green-500 focus:outline-none cursor-pointer"
             >
-              &rarr;
-            </button>
+              {availableYears.map((y) => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
           </div>
 
           {/* Calendar grid */}
@@ -442,14 +440,30 @@ function TimelineCard({ data }: { data: SpotifyStream[] }) {
       {/* === SLIDER TAB === */}
       {tab === "slider" && (
         <div className="space-y-4">
-          {/* Current date display */}
-          <div className="text-center">
-            <p className="text-2xl font-bold text-zinc-100">
-              {formatNiceDate(sliderDisplayDate)}
-            </p>
-            <p className="mt-1 text-sm text-zinc-500">
-              {sliderDisplayCount} {sliderDisplayCount === 1 ? "stream" : "streams"}
-            </p>
+          {/* Current date display with prev/next arrows */}
+          <div className="flex items-center justify-center gap-4">
+            <button
+              onClick={() => navigateDay(-1)}
+              disabled={sliderIndex <= 0}
+              className="rounded-lg border border-zinc-700 px-2.5 py-1.5 text-sm text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              &larr;
+            </button>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-zinc-100">
+                {formatNiceDate(sliderDisplayDate)}
+              </p>
+              <p className="mt-1 text-sm text-zinc-500">
+                {sliderDisplayCount} {sliderDisplayCount === 1 ? "stream" : "streams"}
+              </p>
+            </div>
+            <button
+              onClick={() => navigateDay(1)}
+              disabled={sliderIndex >= allDates.length - 1}
+              className="rounded-lg border border-zinc-700 px-2.5 py-1.5 text-sm text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              &rarr;
+            </button>
           </div>
 
           {/* Slider track */}
@@ -478,7 +492,7 @@ function TimelineCard({ data }: { data: SpotifyStream[] }) {
                 style={{ margin: 0 }}
               />
             </div>
-            {/* Year + quarter tick marks */}
+            {/* Year tick marks */}
             <div className="relative h-5 mt-1">
               {sliderTicks.map((tick, i) => (
                 <div
@@ -486,14 +500,8 @@ function TimelineCard({ data }: { data: SpotifyStream[] }) {
                   className="absolute -translate-x-1/2 flex flex-col items-center"
                   style={{ left: `${tick.pct}%` }}
                 >
-                  {tick.label ? (
-                    <>
-                      <div className="w-px h-2 bg-zinc-500" />
-                      <span className="text-[10px] text-zinc-500 mt-0.5">{tick.label}</span>
-                    </>
-                  ) : (
-                    <div className="w-1 h-1 rounded-full bg-zinc-600 mt-0.5" />
-                  )}
+                  <div className="w-px h-2 bg-zinc-500" />
+                  <span className="text-[10px] text-zinc-500 mt-0.5">{tick.label}</span>
                 </div>
               ))}
             </div>
@@ -612,18 +620,11 @@ export default function Dashboard({ data }: DashboardProps) {
         <StatCard label="Minutos totales" value={stats.totalMinutes} />
         <StatCard label="Artistas únicos" value={stats.uniqueArtists} />
         <StatCard label="Canciones únicas" value={stats.uniqueTracks} />
-        <StatCard label="Periodo" value={stats.period} />
-      </div>
-
-      {/* Busiest Day */}
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
-        <p className="text-sm text-zinc-500">Día con más canciones escuchadas</p>
-        <p className="mt-1 text-2xl font-bold text-zinc-100">
-          {busiest.date}{" "}
-          <span className="text-lg font-normal text-zinc-400">
-            ({busiest.count.toLocaleString()} streams)
-          </span>
-        </p>
+        <div className="rounded-xl border border-green-800/50 bg-green-950/40 p-5">
+          <p className="text-sm text-green-400/70">Día más escuchado</p>
+          <p className="mt-1 text-2xl font-bold text-green-300">{busiest.date}</p>
+          <p className="mt-0.5 text-sm text-green-400/60">{busiest.count.toLocaleString()} streams</p>
+        </div>
       </div>
 
       {/* Timeline */}
@@ -878,66 +879,86 @@ export default function Dashboard({ data }: DashboardProps) {
         {show3D ? (
           <PlotlyChart
             data={(() => {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const traces: any[] = [];
               const maxVal = Math.max(...heatmap.flat(), 1);
-              // Use square aspect: both x and y step = 1, no gaps
+              // Combine all cubes into a single mesh3d + single scatter3d (2 traces total)
+              const meshX: number[] = [];
+              const meshY: number[] = [];
+              const meshZ: number[] = [];
+              const meshI: number[] = [];
+              const meshJ: number[] = [];
+              const meshK: number[] = [];
+              const faceColors: string[] = [];
+              const vertexTexts: string[] = [];
+              const wireX: (number | null)[] = [];
+              const wireY: (number | null)[] = [];
+              const wireZ: (number | null)[] = [];
+
+              // Triangle indices for one cube (outward-facing normals)
+              // 0:(x0,y0,0) 1:(x1,y0,0) 2:(x1,y1,0) 3:(x0,y1,0)
+              // 4:(x0,y0,v) 5:(x1,y0,v) 6:(x1,y1,v) 7:(x0,y1,v)
+              const ci = [0, 0, 4, 4, 0, 0, 3, 3, 0, 0, 1, 1];
+              const cj = [2, 3, 5, 6, 1, 5, 7, 6, 4, 7, 2, 6];
+              const ck = [1, 2, 6, 7, 5, 4, 6, 2, 7, 3, 6, 5];
+              const edgePairs = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+
               for (let d = 0; d < dayLabels.length; d++) {
                 for (let h = 0; h < 24; h++) {
                   const val = heatmap[d][h];
                   if (val === 0) continue;
                   const norm = val / maxVal;
-                  const green = Math.round(122 + norm * 93);
-                  const fillColor = `rgb(${Math.round(13 + norm * 17)},${green},${Math.round(54 + norm * 42)})`;
-                  const edgeColor = `rgb(${Math.round(40 + norm * 30)},${Math.round(180 + norm * 50)},${Math.round(80 + norm * 50)})`;
-                  // 8 vertices of unit cube at (h,d)
+                  const fillColor = `rgb(${Math.round(13 + norm * 17)},${Math.round(122 + norm * 93)},${Math.round(54 + norm * 42)})`;
+
+                  const base = meshX.length;
                   const x0 = h, x1 = h + 1, y0 = d, y1 = d + 1;
-                  // Mesh face — 8 vertices, 12 triangles (2 per face)
-                  // 0:(x0,y0,0) 1:(x1,y0,0) 2:(x1,y1,0) 3:(x0,y1,0)
-                  // 4:(x0,y0,v) 5:(x1,y0,v) 6:(x1,y1,v) 7:(x0,y1,v)
-                  traces.push({
-                    type: "mesh3d" as const,
-                    x: [x0, x1, x1, x0, x0, x1, x1, x0],
-                    y: [y0, y0, y1, y1, y0, y0, y1, y1],
-                    z: [0, 0, 0, 0, val, val, val, val],
-                    i: [0, 0, 4, 4, 0, 0, 2, 2, 0, 0, 1, 1],
-                    j: [1, 2, 6, 7, 5, 4, 7, 6, 3, 7, 5, 6],
-                    k: [2, 3, 5, 4, 1, 5, 3, 7, 7, 4, 6, 2],
-                    color: fillColor,
-                    hovertext: `${dayLabels[d]} ${h}h: ${val} streams`,
-                    hoverinfo: "text" as const,
-                    showlegend: false,
-                    flatshading: true,
-                    lighting: { ambient: 0.8, diffuse: 0.3, specular: 0.1 },
-                  });
-                  // Wireframe edges (12 edges of a cube)
+
+                  meshX.push(x0, x1, x1, x0, x0, x1, x1, x0);
+                  meshY.push(y0, y0, y1, y1, y0, y0, y1, y1);
+                  meshZ.push(0, 0, 0, 0, val, val, val, val);
+
+                  const label = `${dayLabels[d]} ${h}h: ${val} streams`;
+                  for (let v = 0; v < 8; v++) vertexTexts.push(label);
+
+                  for (let t = 0; t < 12; t++) {
+                    meshI.push(ci[t] + base);
+                    meshJ.push(cj[t] + base);
+                    meshK.push(ck[t] + base);
+                    faceColors.push(fillColor);
+                  }
+
+                  // Wireframe edges
                   const vx = [x0, x1, x1, x0, x0, x1, x1, x0];
                   const vy = [y0, y0, y1, y1, y0, y0, y1, y1];
                   const vz = [0, 0, 0, 0, val, val, val, val];
-                  const edges = [
-                    [0,1],[1,2],[2,3],[3,0], // bottom
-                    [4,5],[5,6],[6,7],[7,4], // top
-                    [0,4],[1,5],[2,6],[3,7], // verticals
-                  ];
-                  const ex: (number | null)[] = [];
-                  const ey: (number | null)[] = [];
-                  const ez: (number | null)[] = [];
-                  for (const [a, b] of edges) {
-                    ex.push(vx[a], vx[b], null);
-                    ey.push(vy[a], vy[b], null);
-                    ez.push(vz[a], vz[b], null);
+                  for (const [a, b] of edgePairs) {
+                    wireX.push(vx[a], vx[b], null);
+                    wireY.push(vy[a], vy[b], null);
+                    wireZ.push(vz[a], vz[b], null);
                   }
-                  traces.push({
-                    type: "scatter3d" as const,
-                    mode: "lines" as const,
-                    x: ex, y: ey, z: ez,
-                    line: { color: edgeColor, width: 1.5 },
-                    hoverinfo: "skip" as const,
-                    showlegend: false,
-                  });
                 }
               }
-              return traces;
+
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              return [
+                {
+                  type: "mesh3d",
+                  x: meshX, y: meshY, z: meshZ,
+                  i: meshI, j: meshJ, k: meshK,
+                  facecolor: faceColors,
+                  text: vertexTexts,
+                  hoverinfo: "text",
+                  flatshading: true,
+                  lighting: { ambient: 0.8, diffuse: 0.3, specular: 0.1 },
+                  showlegend: false,
+                },
+                {
+                  type: "scatter3d",
+                  mode: "lines",
+                  x: wireX, y: wireY, z: wireZ,
+                  line: { color: "#22c55e", width: 1.5 },
+                  hoverinfo: "skip",
+                  showlegend: false,
+                },
+              ] as any[];
             })()}
             layout={{
               ...chartLayout("Actividad por Día y Hora (3D)"),
@@ -1029,32 +1050,34 @@ export default function Dashboard({ data }: DashboardProps) {
               locations: countriesAll.map((c) => iso2ToIso3(c.name)),
               z: countriesAll.map((c) => {
                 const n = c.count;
-                if (n <= 50) return 1;
-                if (n <= 200) return 2;
-                if (n <= 1000) return 3;
-                if (n <= 5000) return 4;
-                if (n <= 20000) return 5;
-                return 6;
+                if (n <= 100) return 1;
+                if (n <= 500) return 2;
+                if (n <= 2000) return 3;
+                if (n <= 8000) return 4;
+                if (n <= 25000) return 5;
+                if (n <= 60000) return 6;
+                return 7;
               }),
               zmin: 1,
-              zmax: 6,
+              zmax: 7,
               text: countriesAll.map(
                 (c) => `${c.name}: ${c.count.toLocaleString()} streams`
               ),
               hoverinfo: "text" as const,
               colorscale: [
                 [0, "#14532d"],
-                [0.2, "#166534"],
-                [0.4, "#15803d"],
-                [0.6, "#22c55e"],
-                [0.8, "#4ade80"],
+                [0.167, "#166534"],
+                [0.333, "#15803d"],
+                [0.5, "#16a34a"],
+                [0.667, "#22c55e"],
+                [0.833, "#4ade80"],
                 [1, "#1ed760"],
               ],
               colorbar: {
                 title: { text: "Streams", font: { color: "#a1a1aa" } },
                 tickfont: { color: "#a1a1aa" },
-                tickvals: [1, 2, 3, 4, 5, 6],
-                ticktext: ["1–50", "51–200", "201–1k", "1k–5k", "5k–20k", "20k+"],
+                tickvals: [1, 2, 3, 4, 5, 6, 7],
+                ticktext: ["1–100", "101–500", "501–2k", "2k–8k", "8k–25k", "25k–60k", "60k+"],
               },
               marker: { line: { color: "#22c55e", width: 1 } },
             },
