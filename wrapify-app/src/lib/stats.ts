@@ -313,6 +313,31 @@ export function dailyStreamCounts(streams: SpotifyStream[]): Map<string, number>
   return map;
 }
 
+export function topSongsByYear(
+  streams: SpotifyStream[],
+  limit = 10
+): { year: number; songs: CountItem[] }[] {
+  const byYear = new Map<number, Map<string, number>>();
+  for (const s of streams) {
+    const track = s.master_metadata_track_name;
+    const artist = s.master_metadata_album_artist_name;
+    if (!track || !artist) continue;
+    if (!byYear.has(s.year)) byYear.set(s.year, new Map());
+    const map = byYear.get(s.year)!;
+    const key = `${track} - ${artist}`;
+    map.set(key, (map.get(key) || 0) + 1);
+  }
+  return Array.from(byYear.entries())
+    .sort((a, b) => a[0] - b[0])
+    .map(([year, map]) => ({
+      year,
+      songs: Array.from(map.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, limit)
+        .map(([name, count]) => ({ name, count })),
+    }));
+}
+
 export function summaryStats(streams: SpotifyStream[]) {
   const uniqueArtists = new Set(streams.map((s) => s.master_metadata_album_artist_name)).size;
   const uniqueTracks = new Set(streams.map((s) => s.master_metadata_track_name)).size;

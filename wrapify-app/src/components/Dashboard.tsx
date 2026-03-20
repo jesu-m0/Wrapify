@@ -26,6 +26,7 @@ import {
   iso2ToIso3,
   songsForDay,
   dailyStreamCounts,
+  topSongsByYear,
   CountItem,
 } from "@/lib/stats";
 
@@ -568,6 +569,10 @@ export default function Dashboard({ data }: DashboardProps) {
   const [artistForSongs, setArtistForSongs] = useState<string | null>(null);
   const [topNArtistSongs, setTopNArtistSongs] = useState(10);
 
+  // Top songs by year
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const [topNYearSongs, setTopNYearSongs] = useState(10);
+
   // 3D heatmap toggle
   const [show3D, setShow3D] = useState(false);
 
@@ -607,6 +612,10 @@ export default function Dashboard({ data }: DashboardProps) {
     [data, artistForSongs, topNArtistSongs]
   );
 
+  const songsByYear = useMemo(() => topSongsByYear(data, topNYearSongs), [data, topNYearSongs]);
+  const activeYear = selectedYear ?? (songsByYear.length > 0 ? songsByYear[songsByYear.length - 1].year : null);
+  const activeYearSongs = songsByYear.find((y) => y.year === activeYear)?.songs ?? [];
+
   const totalCountryStreams = countries.reduce((a, c) => a + c.count, 0);
   const dayLabels = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
   const hourLabels = Array.from({ length: 24 }, (_, i) => `${i}h`);
@@ -636,6 +645,44 @@ export default function Dashboard({ data }: DashboardProps) {
         <RankingList title="Artistas" items={artists} topN={topNArtists} onTopNChange={setTopNArtists} />
         <RankingList title="Álbumes" items={albums} topN={topNAlbums} onTopNChange={setTopNAlbums} />
         <RankingList title="Artistas (canciones únicas)" items={uniqueTrackArtists} topN={topNUnique} onTopNChange={setTopNUnique} />
+      </div>
+
+      {/* Top songs by year */}
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-base font-semibold text-zinc-100">Top canciones por año</h3>
+          <TopNInput value={topNYearSongs} onChange={setTopNYearSongs} />
+        </div>
+        <div className="mb-4 flex flex-wrap gap-2">
+          {songsByYear.map(({ year }) => (
+            <button
+              key={year}
+              onClick={() => setSelectedYear(year)}
+              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                year === activeYear
+                  ? "bg-green-600 text-white"
+                  : "border border-zinc-700 text-zinc-400 hover:bg-zinc-800"
+              }`}
+            >
+              {year}
+            </button>
+          ))}
+        </div>
+        {activeYear && (
+          <ol className="space-y-2">
+            {activeYearSongs.map((item, i) => (
+              <li key={item.name} className="flex items-center justify-between gap-4">
+                <span className="flex items-center gap-3 min-w-0">
+                  <span className="w-6 text-right text-sm font-medium text-zinc-500">{i + 1}</span>
+                  <span className="truncate text-sm text-zinc-300">{item.name}</span>
+                </span>
+                <span className="shrink-0 text-sm font-medium text-zinc-400">
+                  {item.count.toLocaleString()}
+                </span>
+              </li>
+            ))}
+          </ol>
+        )}
       </div>
 
       {/* Top songs by artist */}

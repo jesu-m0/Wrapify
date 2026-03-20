@@ -1,7 +1,5 @@
  - Cambiar layout a Bento grid Dashboard y que ocupe todo el ancho de pantalla. no se espera que este preparada para movil
 
-- Solucionar el issue que salía
-- Escala de verdes en el mapamundi para que no salgan países en negro
 - Revisar gráfico de actividad por hora del día
 - Poner todos los años en el gráfico de streams por año (en las labels)
 - Revisar si funciona al subir únicamente la carpeta que llega de spotify (hacer guia rapida y que se muestre en tres pasos sencillos en la main page)
