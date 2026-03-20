@@ -28,7 +28,7 @@ import {
   dailyStreamCounts,
   topSongsByYear,
   monthlyAverage,
-  skipStats,
+  skipAnalysis,
   CountItem,
 } from "@/lib/stats";
 
@@ -616,7 +616,7 @@ export default function Dashboard({ data }: DashboardProps) {
 
   const songsByYear = useMemo(() => topSongsByYear(data, topNYearSongs), [data, topNYearSongs]);
   const monthAvg = useMemo(() => monthlyAverage(data), [data]);
-  const skips = useMemo(() => skipStats(data), [data]);
+  const skips = useMemo(() => skipAnalysis(data), [data]);
   const activeYear = selectedYear ?? (songsByYear.length > 0 ? songsByYear[songsByYear.length - 1].year : null);
   const activeYearSongs = songsByYear.find((y) => y.year === activeYear)?.songs ?? [];
 
@@ -848,19 +848,18 @@ export default function Dashboard({ data }: DashboardProps) {
       {/* Yearly Trend - full width */}
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
         <PlotlyChart
-          data={yearly.map((y, i) => ({
-            type: "bar" as const,
-            x: [y.name],
-            y: [y.count],
-            name: y.name,
-            marker: { color: COMPARE_COLORS[i % COMPARE_COLORS.length] },
-            showlegend: true,
-          }))}
-          layout={chartLayout("Streams por Año", {
-            height: 350,
-            showlegend: true,
-            legend: { font: { color: "#a1a1aa" }, orientation: "h" as const, y: -0.15 },
-          })}
+          data={[
+            {
+              type: "bar",
+              x: yearly.map((y) => y.name),
+              y: yearly.map((y) => y.count),
+              marker: { color: "#1DB954" },
+              text: yearly.map((y) => y.count.toLocaleString()),
+              textposition: "outside" as const,
+              textfont: { color: "#a1a1aa", size: 12 },
+            },
+          ]}
+          layout={chartLayout("Streams por Año", { height: 350 })}
           config={chartConfig}
           style={{ width: "100%" }}
         />
@@ -1082,32 +1081,170 @@ export default function Dashboard({ data }: DashboardProps) {
       </div>
 
       {/* Skip Stats */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
-          <h3 className="mb-2 text-base font-semibold text-zinc-100">Skips</h3>
-          <p className="text-4xl font-bold text-zinc-100">{skips.skipPercent}%</p>
-          <p className="mt-1 text-sm text-zinc-500">de canciones fueron skipeadas</p>
+      <div className="space-y-4">
+        {/* Summary cards */}
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+            <p className="text-sm text-zinc-500">Canciones skipeadas</p>
+            <p className="mt-1 text-2xl font-bold text-red-400">{skips.skipPercent}%</p>
+            <p className="mt-0.5 text-xs text-zinc-600">{skips.totalSkips.toLocaleString()} skips totales</p>
+          </div>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+            <p className="text-sm text-zinc-500">Tiempo medio antes de skip</p>
+            <p className="mt-1 text-2xl font-bold text-zinc-100">{skips.avgSecondsBeforeSkip}s</p>
+            <p className="mt-0.5 text-xs text-zinc-600">segundos de media</p>
+          </div>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+            <p className="text-sm text-zinc-500">Canciones completadas</p>
+            <p className="mt-1 text-2xl font-bold text-green-400">
+              {(100 - skips.skipPercent).toFixed(1)}%
+            </p>
+            <p className="mt-0.5 text-xs text-zinc-600">escuchadas hasta el final</p>
+          </div>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+            <p className="text-sm text-zinc-500">Hora con más skips</p>
+            <p className="mt-1 text-2xl font-bold text-zinc-100">
+              {skips.skipRateByHour.indexOf(Math.max(...skips.skipRateByHour))}h
+            </p>
+            <p className="mt-0.5 text-xs text-zinc-600">
+              {Math.max(...skips.skipRateByHour)}% de skip rate
+            </p>
+          </div>
         </div>
+
+        {/* How songs end + skip rate by year */}
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
+            <PlotlyChart
+              data={[
+                {
+                  type: "pie",
+                  labels: skips.reasonEndDistribution.map((r) => r.name),
+                  values: skips.reasonEndDistribution.map((r) => r.count),
+                  hole: 0.45,
+                  marker: {
+                    colors: ["#e74c3c", "#f39c12", "#1DB954", "#22c55e", "#9b59b6",
+                             "#3498db", "#1abc9c", "#e67e22", "#e84393", "#00cec9"],
+                  },
+                  textinfo: "label+percent",
+                  textposition: "outside",
+                  textfont: { size: 11 },
+                  hovertemplate: "%{label}<br>%{value:,} veces (%{percent})<extra></extra>",
+                },
+              ]}
+              layout={{
+                ...chartLayout("Cómo terminan tus canciones"),
+                height: 420,
+                showlegend: true,
+                legend: { font: { color: "#a1a1aa", size: 11 } },
+                margin: { t: 50, b: 10, l: 10, r: 10 },
+              }}
+              config={chartConfig}
+              style={{ width: "100%" }}
+            />
+          </div>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
+            <PlotlyChart
+              data={[
+                {
+                  type: "bar",
+                  x: skips.skipRateByYear.map((y) => y.year),
+                  y: skips.skipRateByYear.map((y) => y.rate),
+                  marker: {
+                    color: skips.skipRateByYear.map((y) => y.rate),
+                    colorscale: [[0, "#22c55e"], [1, "#e74c3c"]],
+                  },
+                  text: skips.skipRateByYear.map((y) => `${y.rate}%`),
+                  textposition: "outside" as const,
+                  textfont: { color: "#a1a1aa", size: 12 },
+                },
+              ]}
+              layout={chartLayout("Evolución del % de skips por año", {
+                height: 420,
+                yaxis: { gridcolor: "#27272a", title: { text: "% skip" } },
+              })}
+              config={chartConfig}
+              style={{ width: "100%" }}
+            />
+          </div>
+        </div>
+
+        {/* Skip rate by hour */}
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
           <PlotlyChart
             data={[
               {
                 type: "bar",
-                x: skips.mostSkipped.map((s) => s.count),
-                y: skips.mostSkipped.map((s) => s.name),
-                orientation: "h" as const,
-                marker: { color: "#e74c3c" },
+                x: hourLabels,
+                y: skips.skipRateByHour,
+                marker: {
+                  color: skips.skipRateByHour,
+                  colorscale: [[0, "#22c55e"], [1, "#e74c3c"]],
+                },
               },
             ]}
-            layout={chartLayout("Canciones más skipeadas", {
-              height: Math.max(300, skips.mostSkipped.length * 28 + 80),
-              yaxis: { gridcolor: "#27272a", autorange: "reversed" as const },
-              xaxis: { gridcolor: "#27272a", title: { text: "Skips" } },
-              margin: { l: 250, t: 50, b: 50, r: 20 },
+            layout={chartLayout("% de skips por hora del día", {
+              height: 300,
+              yaxis: { gridcolor: "#27272a", title: { text: "% skip" } },
             })}
             config={chartConfig}
             style={{ width: "100%" }}
           />
+        </div>
+
+        {/* Most skipped songs + artists with highest skip rate */}
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
+            <PlotlyChart
+              data={[
+                {
+                  type: "bar",
+                  x: skips.mostSkippedSongs.map((s) => s.count),
+                  y: skips.mostSkippedSongs.map((s) => s.name),
+                  orientation: "h" as const,
+                  marker: { color: "#e74c3c" },
+                },
+              ]}
+              layout={chartLayout("Canciones más skipeadas", {
+                height: Math.max(350, skips.mostSkippedSongs.length * 28 + 80),
+                yaxis: { gridcolor: "#27272a", autorange: "reversed" as const },
+                xaxis: { gridcolor: "#27272a", title: { text: "Skips" } },
+                margin: { l: 250, t: 50, b: 50, r: 20 },
+              })}
+              config={chartConfig}
+              style={{ width: "100%" }}
+            />
+          </div>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
+            <PlotlyChart
+              data={[
+                {
+                  type: "bar",
+                  x: skips.mostSkippedArtists.map((a) => a.skipRate),
+                  y: skips.mostSkippedArtists.map((a) => a.name),
+                  orientation: "h" as const,
+                  marker: {
+                    color: skips.mostSkippedArtists.map((a) => a.skipRate),
+                    colorscale: [[0, "#f39c12"], [1, "#e74c3c"]],
+                  },
+                  text: skips.mostSkippedArtists.map(
+                    (a) => `${a.skipRate}% (${a.skips}/${a.total})`
+                  ),
+                  textposition: "outside" as const,
+                  textfont: { color: "#a1a1aa", size: 10 },
+                  hovertemplate: "%{y}<br>%{x}% skip rate<br>%{text}<extra></extra>",
+                },
+              ]}
+              layout={chartLayout("Artistas con mayor % de skip (mín. 20 plays)", {
+                height: Math.max(350, skips.mostSkippedArtists.length * 28 + 80),
+                yaxis: { gridcolor: "#27272a", autorange: "reversed" as const },
+                xaxis: { gridcolor: "#27272a", title: { text: "% skip" } },
+                margin: { l: 200, t: 50, b: 50, r: 80 },
+              })}
+              config={chartConfig}
+              style={{ width: "100%" }}
+            />
+          </div>
         </div>
       </div>
 

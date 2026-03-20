@@ -176,30 +176,107 @@ export function monthlyAverage(streams: SpotifyStream[]): CountItem[] {
   }));
 }
 
-export function skipStats(streams: SpotifyStream[]): {
+export interface SkipAnalysis {
   skipPercent: number;
-  mostSkipped: CountItem[];
-} {
-  let skipped = 0;
-  const skipMap = new Map<string, number>();
+  totalSkips: number;
+  avgSecondsBeforeSkip: number;
+  mostSkippedSongs: CountItem[];
+  mostSkippedArtists: { name: string; skipRate: number; skips: number; total: number }[];
+  skipRateByHour: number[];
+  skipRateByYear: { year: string; rate: number }[];
+  reasonEndDistribution: CountItem[];
+}
+
+const REASON_LABELS: Record<string, string> = {
+  fwdbtn: "Skip (adelante)",
+  backbtn: "Atrás",
+  endplay: "Fin natural",
+  trackdone: "Canción completa",
+  logout: "Cierre sesión",
+  unexpected_exit: "Cierre inesperado",
+  unexpected_exit_while_paused: "Cierre en pausa",
+  remote: "Control remoto",
+  clickrow: "Click en otra canción",
+  playbtn: "Botón play",
+  appload: "Carga de app",
+  unknown: "Desconocido",
+};
+
+export function skipAnalysis(streams: SpotifyStream[]): SkipAnalysis {
+  let totalSkips = 0;
+  let skipMsTotal = 0;
+  const songSkipMap = new Map<string, number>();
+  const artistPlays = new Map<string, number>();
+  const artistSkips = new Map<string, number>();
+  const hourPlays = new Array(24).fill(0);
+  const hourSkips = new Array(24).fill(0);
+  const yearPlays = new Map<number, number>();
+  const yearSkips = new Map<number, number>();
+  const reasonMap = new Map<string, number>();
+
   for (const s of streams) {
+    const artist = s.master_metadata_album_artist_name;
+    const track = s.master_metadata_track_name;
+    hourPlays[s.hour]++;
+    yearPlays.set(s.year, (yearPlays.get(s.year) || 0) + 1);
+    if (artist) artistPlays.set(artist, (artistPlays.get(artist) || 0) + 1);
+
+    const reason = s.reason_end || "unknown";
+    const label = REASON_LABELS[reason] || reason;
+    reasonMap.set(label, (reasonMap.get(label) || 0) + 1);
+
     if (s.skipped) {
-      skipped++;
-      const track = s.master_metadata_track_name;
-      const artist = s.master_metadata_album_artist_name;
+      totalSkips++;
+      skipMsTotal += s.ms_played;
+      hourSkips[s.hour]++;
+      yearSkips.set(s.year, (yearSkips.get(s.year) || 0) + 1);
+      if (artist) artistSkips.set(artist, (artistSkips.get(artist) || 0) + 1);
       if (track && artist) {
         const key = `${track} - ${artist}`;
-        skipMap.set(key, (skipMap.get(key) || 0) + 1);
+        songSkipMap.set(key, (songSkipMap.get(key) || 0) + 1);
       }
     }
   }
-  const mostSkipped = Array.from(skipMap.entries())
+
+  const mostSkippedSongs = Array.from(songSkipMap.entries())
     .sort((a, b) => b[1] - a[1])
     .slice(0, 15)
     .map(([name, count]) => ({ name, count }));
+
+  const MIN_PLAYS_FOR_RATE = 20;
+  const mostSkippedArtists = Array.from(artistPlays.entries())
+    .filter(([, total]) => total >= MIN_PLAYS_FOR_RATE)
+    .map(([name, total]) => {
+      const skips = artistSkips.get(name) || 0;
+      return { name, skipRate: Math.round((skips / total) * 1000) / 10, skips, total };
+    })
+    .sort((a, b) => b.skipRate - a.skipRate)
+    .slice(0, 15);
+
+  const skipRateByHour = hourPlays.map((plays, i) =>
+    plays > 0 ? Math.round((hourSkips[i] / plays) * 1000) / 10 : 0
+  );
+
+  const skipRateByYear = Array.from(yearPlays.entries())
+    .sort((a, b) => a[0] - b[0])
+    .map(([year, total]) => ({
+      year: String(year),
+      rate: Math.round(((yearSkips.get(year) || 0) / total) * 1000) / 10,
+    }));
+
+  const reasonEndDistribution = Array.from(reasonMap.entries())
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, count]) => ({ name, count }));
+
   return {
-    skipPercent: streams.length > 0 ? Math.round((skipped / streams.length) * 1000) / 10 : 0,
-    mostSkipped,
+    skipPercent: streams.length > 0 ? Math.round((totalSkips / streams.length) * 1000) / 10 : 0,
+    totalSkips,
+    avgSecondsBeforeSkip: totalSkips > 0 ? Math.round(skipMsTotal / totalSkips / 1000) : 0,
+    mostSkippedSongs,
+    mostSkippedArtists,
+    skipRateByHour,
+    skipRateByYear,
+    reasonEndDistribution,
   };
 }
 
