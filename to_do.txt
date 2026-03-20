@@ -14,4 +14,5 @@ Poner enlaces a la wikipedia del artista??
 - Yo pondría el día con más escuchas con el mismo formato que el resto de elementos de la cabecera y pondría de título "Día con más escuchas" en vez de "Día más escuchado"
 - La gráfica de streams por año hay que centrarla verticalmente con el calendario y el slider
 - De los skips yo creo que hay demasiada info, yo creo que no interesa tanto pero se puede hablar la próxima vez que nos conectemos a DC
+    agree. le pedi unos pocos a modo de brainstorming
 

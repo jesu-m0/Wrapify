@@ -46,16 +46,16 @@ const COMPARE_COLORS = [
 
 /* ── Shared Plotly helpers ── */
 
-const CARD = "rounded-2xl border border-zinc-800/50 bg-zinc-900/50";
+const CARD = "rounded-3xl bg-[#111]";
 
 const chartLayout = (title: string, extra?: Partial<Plotly.Layout>): Partial<Plotly.Layout> => ({
-  title: { text: title, font: { size: 14, color: "#d4d4d8" } },
+  title: { text: title, font: { size: 14, color: "#e4e4e7" } },
   paper_bgcolor: "transparent",
   plot_bgcolor: "transparent",
   font: { color: "#a1a1aa", size: 11 },
   margin: { t: 40, b: 50, l: 50, r: 16 },
-  xaxis: { gridcolor: "#27272a" },
-  yaxis: { gridcolor: "#27272a" },
+  xaxis: { gridcolor: "#1a1a1a", zerolinecolor: "#1a1a1a" },
+  yaxis: { gridcolor: "#1a1a1a", zerolinecolor: "#1a1a1a" },
   ...extra,
 });
 
@@ -75,39 +75,45 @@ function StatCard({
   value,
   sub,
   accent,
+  big,
+  className,
 }: {
   label: string;
   value: string | number;
   sub?: string;
   accent?: boolean;
+  big?: boolean;
+  className?: string;
 }) {
   return (
     <div
       className={`${
         accent
-          ? "rounded-2xl bg-green-950/40 border border-green-800/30 p-4"
-          : `${CARD} p-4`
-      }`}
+          ? "rounded-3xl bg-emerald-950 p-5"
+          : `${CARD} p-5`
+      } flex flex-col justify-between ${className || ""}`}
     >
       <p
-        className={`text-[11px] font-semibold uppercase tracking-wider ${
-          accent ? "text-green-400/70" : "text-zinc-500"
+        className={`text-[11px] font-bold uppercase tracking-wider ${
+          accent ? "text-emerald-400/80" : "text-zinc-500"
         }`}
       >
         {label}
       </p>
-      <p
-        className={`mt-1.5 text-2xl font-bold ${
-          accent ? "text-green-300" : "text-zinc-100"
-        }`}
-      >
-        {typeof value === "number" ? value.toLocaleString() : value}
-      </p>
-      {sub && (
-        <p className={`mt-0.5 text-xs ${accent ? "text-green-400/50" : "text-zinc-600"}`}>
-          {sub}
+      <div className="mt-auto">
+        <p
+          className={`${big ? "text-5xl" : "text-2xl"} font-black tracking-tight ${
+            accent ? "text-emerald-300" : "text-white"
+          }`}
+        >
+          {typeof value === "number" ? value.toLocaleString() : value}
         </p>
-      )}
+        {sub && (
+          <p className={`mt-1 text-xs ${accent ? "text-emerald-400/50" : "text-zinc-600"}`}>
+            {sub}
+          </p>
+        )}
+      </div>
     </div>
   );
 }
@@ -122,7 +128,7 @@ function TopNInput({ value, onChange }: { value: number; onChange: (n: number) =
         max={100}
         value={value}
         onChange={(e) => onChange(Math.max(1, Math.min(100, Number(e.target.value) || 10)))}
-        className="w-14 rounded-lg border border-zinc-700/60 bg-zinc-800/60 px-2 py-1 text-xs text-zinc-100 focus:border-green-500 focus:outline-none"
+        className="w-14 rounded-xl border-0 bg-white/5 px-2 py-1 text-xs text-zinc-100 focus:ring-1 focus:ring-emerald-500 focus:outline-none"
       />
     </div>
   );
@@ -145,14 +151,14 @@ function RankingList({
         <h3 className="text-sm font-semibold text-zinc-100">{title}</h3>
         <TopNInput value={topN} onChange={onTopNChange} />
       </div>
-      <ol className="space-y-1.5 overflow-y-auto flex-1" style={{ maxHeight: 360 }}>
+      <ol className="space-y-1 overflow-y-auto flex-1" style={{ maxHeight: 360 }}>
         {items.map((item, i) => (
-          <li key={item.name} className="flex items-center justify-between gap-3">
+          <li key={item.name} className="flex items-center justify-between gap-3 rounded-xl px-2 py-1.5 hover:bg-white/[0.03] transition-colors">
             <span className="flex items-center gap-2.5 min-w-0">
-              <span className="w-5 text-right text-xs font-medium text-zinc-600">{i + 1}</span>
+              <span className="w-5 text-right text-xs font-bold text-zinc-600">{i + 1}</span>
               <span className="truncate text-[13px] text-zinc-300">{item.name}</span>
             </span>
-            <span className="shrink-0 text-xs font-medium tabular-nums text-zinc-500">
+            <span className="shrink-0 rounded-full bg-white/5 px-2.5 py-0.5 text-[11px] font-semibold tabular-nums text-zinc-400">
               {item.count.toLocaleString()}
             </span>
           </li>
@@ -169,14 +175,14 @@ function TagList({ tags, onRemove }: { tags: string[]; onRemove: (tag: string) =
       {tags.map((tag) => (
         <span
           key={tag}
-          className="flex items-center gap-1 rounded-full bg-zinc-800/80 px-2.5 py-0.5 text-xs text-zinc-300"
+          className="flex items-center gap-1 rounded-full bg-emerald-950 px-3 py-1 text-xs font-medium text-emerald-300"
         >
           {tag}
           <button
             onClick={() => onRemove(tag)}
-            className="ml-0.5 text-zinc-500 hover:text-zinc-100"
+            className="ml-0.5 text-emerald-500 hover:text-white"
           >
-            x
+            ×
           </button>
         </span>
       ))}
@@ -186,11 +192,10 @@ function TagList({ tags, onRemove }: { tags: string[]; onRemove: (tag: string) =
 
 function SectionLabel({ children }: { children: string }) {
   return (
-    <div className="col-span-12 flex items-center gap-3 pt-4 pb-1">
-      <h2 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-zinc-600">
+    <div className="col-span-12 pt-8 pb-2">
+      <h2 className="text-xs font-black uppercase tracking-[0.2em] text-emerald-500">
         {children}
       </h2>
-      <div className="h-px flex-1 bg-zinc-800/40" />
     </div>
   );
 }
@@ -209,19 +214,19 @@ function SongCard({ song, index }: { song: { time: string; track: string; artist
   const mins = Math.floor(song.minutesPlayed);
   const secs = Math.round((song.minutesPlayed - mins) * 60);
   return (
-    <div className="group flex items-center gap-3 rounded-lg bg-zinc-800/30 p-2.5 hover:bg-zinc-700/40 transition-colors">
+    <div className="group flex items-center gap-3 rounded-2xl bg-white/[0.03] p-2.5 hover:bg-white/[0.06] transition-colors">
       <div className="shrink-0 w-8 text-center">
-        <span className="text-xs font-medium text-zinc-600 group-hover:text-zinc-400 transition-colors">
+        <span className="text-xs font-bold text-zinc-600 group-hover:text-zinc-400 transition-colors">
           {index + 1}
         </span>
       </div>
-      <div className="shrink-0 h-8 w-8 rounded bg-zinc-700/60 flex items-center justify-center">
-        <svg className="w-4 h-4 text-zinc-500" fill="currentColor" viewBox="0 0 24 24">
+      <div className="shrink-0 h-8 w-8 rounded-xl bg-emerald-950 flex items-center justify-center">
+        <svg className="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 24 24">
           <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
         </svg>
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] font-medium text-zinc-100">{song.track}</p>
+        <p className="truncate text-[13px] font-medium text-white">{song.track}</p>
         <p className="truncate text-xs text-zinc-500">{song.artist}</p>
       </div>
       <span className="hidden sm:block truncate text-xs text-zinc-600 max-w-[140px]">
@@ -300,12 +305,12 @@ function TimelineCard({ data }: { data: SpotifyStream[] }) {
 
   const getDayIntensity = (day: number): string => {
     const count = counts.get(formatDate(day)) || 0;
-    if (count === 0) return "bg-zinc-800/40";
+    if (count === 0) return "bg-white/[0.03]";
     const ratio = count / maxCount;
-    if (ratio < 0.25) return "bg-green-900/50";
-    if (ratio < 0.5) return "bg-green-700/60";
-    if (ratio < 0.75) return "bg-green-600/70";
-    return "bg-green-500";
+    if (ratio < 0.25) return "bg-emerald-950";
+    if (ratio < 0.5) return "bg-emerald-900/70";
+    if (ratio < 0.75) return "bg-emerald-700/60";
+    return "bg-emerald-500";
   };
 
   const totalForDay = selectedDate ? (counts.get(selectedDate) || 0) : 0;
@@ -393,13 +398,13 @@ function TimelineCard({ data }: { data: SpotifyStream[] }) {
     <div className={`${CARD} p-5`}>
       {/* Header with tabs */}
       <div className="mb-5 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-zinc-100">Timeline</h3>
-        <div className="flex rounded-lg bg-zinc-800/80 p-0.5">
+        <h3 className="text-sm font-bold text-white">Timeline</h3>
+        <div className="flex rounded-2xl bg-white/5 p-0.5">
           <button
             onClick={() => setTab("calendar")}
-            className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
+            className={`rounded-xl px-3 py-1 text-xs font-semibold transition-colors ${
               tab === "calendar"
-                ? "bg-green-600 text-white"
+                ? "bg-emerald-600 text-white"
                 : "text-zinc-400 hover:text-zinc-200"
             }`}
           >
@@ -407,9 +412,9 @@ function TimelineCard({ data }: { data: SpotifyStream[] }) {
           </button>
           <button
             onClick={() => setTab("slider")}
-            className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
+            className={`rounded-xl px-3 py-1 text-xs font-semibold transition-colors ${
               tab === "slider"
-                ? "bg-green-600 text-white"
+                ? "bg-emerald-600 text-white"
                 : "text-zinc-400 hover:text-zinc-200"
             }`}
           >
@@ -425,7 +430,7 @@ function TimelineCard({ data }: { data: SpotifyStream[] }) {
             <select
               value={viewMonth}
               onChange={(e) => { setViewMonth(Number(e.target.value)); setSelectedDate(null); }}
-              className="rounded-lg border border-zinc-700/60 bg-zinc-800/60 px-3 py-1.5 text-sm text-zinc-100 focus:border-green-500 focus:outline-none cursor-pointer"
+              className="rounded-xl border-0 bg-white/5 px-3 py-1.5 text-sm text-zinc-100 focus:ring-1 focus:ring-emerald-500 focus:outline-none cursor-pointer"
             >
               {MONTH_NAMES.map((name, i) => (
                 <option key={i} value={i + 1}>{name}</option>
@@ -434,7 +439,7 @@ function TimelineCard({ data }: { data: SpotifyStream[] }) {
             <select
               value={viewYear}
               onChange={(e) => { setViewYear(Number(e.target.value)); setSelectedDate(null); }}
-              className="rounded-lg border border-zinc-700/60 bg-zinc-800/60 px-3 py-1.5 text-sm text-zinc-100 focus:border-green-500 focus:outline-none cursor-pointer"
+              className="rounded-xl border-0 bg-white/5 px-3 py-1.5 text-sm text-zinc-100 focus:ring-1 focus:ring-emerald-500 focus:outline-none cursor-pointer"
             >
               {availableYears.map((y) => (
                 <option key={y} value={y}>{y}</option>
@@ -456,10 +461,10 @@ function TimelineCard({ data }: { data: SpotifyStream[] }) {
                   <button
                     key={day}
                     onClick={() => setSelectedDate(formatDate(day))}
-                    className={`aspect-square rounded-lg flex flex-col items-center justify-center text-xs transition-all ${getDayIntensity(day)} ${
+                    className={`aspect-square rounded-xl flex flex-col items-center justify-center text-xs transition-all ${getDayIntensity(day)} ${
                       selectedDate === formatDate(day)
-                        ? "ring-2 ring-green-400 ring-offset-1 ring-offset-zinc-950"
-                        : "hover:ring-1 hover:ring-zinc-600"
+                        ? "ring-2 ring-emerald-400 ring-offset-1 ring-offset-[#111]"
+                        : "hover:ring-1 hover:ring-zinc-700"
                     }`}
                   >
                     <span className="font-medium text-zinc-200">{day}</span>
@@ -483,7 +488,7 @@ function TimelineCard({ data }: { data: SpotifyStream[] }) {
             <button
               onClick={() => navigateDay(-1)}
               disabled={sliderIndex <= 0}
-              className="rounded-lg border border-zinc-700/60 px-2.5 py-1.5 text-sm text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              className="rounded-xl bg-white/5 px-2.5 py-1.5 text-sm text-zinc-400 hover:bg-white/10 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             >
               &larr;
             </button>
@@ -498,7 +503,7 @@ function TimelineCard({ data }: { data: SpotifyStream[] }) {
             <button
               onClick={() => navigateDay(1)}
               disabled={sliderIndex >= allDates.length - 1}
-              className="rounded-lg border border-zinc-700/60 px-2.5 py-1.5 text-sm text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              className="rounded-xl bg-white/5 px-2.5 py-1.5 text-sm text-zinc-400 hover:bg-white/10 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             >
               &rarr;
             </button>
@@ -506,9 +511,9 @@ function TimelineCard({ data }: { data: SpotifyStream[] }) {
 
           <div className="px-2">
             <div className="relative h-6 flex items-center">
-              <div className="h-1 w-full rounded-full bg-zinc-700/60" />
+              <div className="h-1 w-full rounded-full bg-white/10" />
               <div
-                className="absolute top-1/2 -translate-y-1/2 left-0 h-1 rounded-full bg-green-500"
+                className="absolute top-1/2 -translate-y-1/2 left-0 h-1 rounded-full bg-emerald-500"
                 style={{ width: `${currentProgress}%` }}
               />
               <div
@@ -545,7 +550,7 @@ function TimelineCard({ data }: { data: SpotifyStream[] }) {
       {selectedDate && (
         <div className="mt-5">
           <div className="mb-3 flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-zinc-100">
+            <h4 className="text-sm font-bold text-white">
               {selectedDate}{" "}
               <span className="font-normal text-zinc-500">
                 ({totalForDay} {totalForDay === 1 ? "stream" : "streams"})
@@ -562,7 +567,7 @@ function TimelineCard({ data }: { data: SpotifyStream[] }) {
             <p className="text-sm text-zinc-500">No hay canciones este día.</p>
           ) : (
             <>
-              <div className="flex items-center gap-3 px-2.5 pb-2 border-b border-zinc-800/60 text-[10px] uppercase tracking-wider text-zinc-600">
+              <div className="flex items-center gap-3 px-2.5 pb-2 border-b border-white/5 text-[10px] uppercase tracking-wider text-zinc-600">
                 <span className="w-8 text-center">#</span>
                 <span className="w-8" />
                 <span className="flex-1">Título</span>
@@ -650,38 +655,42 @@ export default function Dashboard({ data }: DashboardProps) {
   /* ── JSX ── */
 
   return (
-    <div className="grid grid-cols-12 gap-3">
+    <div className="space-y-4">
 
-      {/* ── Overview stats ── */}
-      <div className="col-span-2">
-        <StatCard label="Total Streams" value={stats.totalStreams} />
-      </div>
-      <div className="col-span-2">
-        <StatCard label="Horas escuchadas" value={stats.totalHours} />
-      </div>
-      <div className="col-span-2">
-        <StatCard label="Minutos totales" value={stats.totalMinutes} />
-      </div>
-      <div className="col-span-2">
-        <StatCard label="Artistas únicos" value={stats.uniqueArtists} />
-      </div>
-      <div className="col-span-2">
-        <StatCard label="Canciones únicas" value={stats.uniqueTracks} />
-      </div>
-      <div className="col-span-2">
-        <StatCard
-          label="Día más escuchado"
-          value={busiest.date}
-          sub={`${busiest.count.toLocaleString()} streams`}
-          accent
-        />
+      {/* ── Overview stats — Bento Grid ── */}
+      <div className="grid grid-cols-12 auto-rows-[100px] gap-4">
+        <div className="col-span-4 row-span-3">
+          <StatCard label="Total Streams" value={stats.totalStreams} accent big className="h-full" />
+        </div>
+        <div className="col-span-4 row-span-1">
+          <StatCard label="Horas escuchadas" value={stats.totalHours} className="h-full" />
+        </div>
+        <div className="col-span-4 row-span-1">
+          <StatCard label="Artistas únicos" value={stats.uniqueArtists} className="h-full" />
+        </div>
+        <div className="col-span-4 row-span-1">
+          <StatCard label="Minutos totales" value={stats.totalMinutes} className="h-full" />
+        </div>
+        <div className="col-span-4 row-span-1">
+          <StatCard label="Canciones únicas" value={stats.uniqueTracks} className="h-full" />
+        </div>
+        <div className="col-span-8 row-span-1">
+          <StatCard
+            label="Día más escuchado"
+            value={busiest.date}
+            sub={`${busiest.count.toLocaleString()} streams`}
+            accent
+            className="h-full"
+          />
+        </div>
       </div>
 
       {/* ── Timeline + Yearly trend ── */}
-      <div className="col-span-8">
+      <div className="grid grid-cols-12 gap-4">
+      <div className="col-span-7">
         <TimelineCard data={data} />
       </div>
-      <div className={`col-span-4 ${CARD} p-4 flex flex-col`}>
+      <div className={`col-span-5 ${CARD} p-4 flex flex-col`}>
         <PlotlyChart
           data={[
             {
@@ -702,24 +711,31 @@ export default function Dashboard({ data }: DashboardProps) {
           style={{ width: "100%", flex: 1 }}
         />
       </div>
+      </div>
 
       {/* ── Rankings ── */}
-      <SectionLabel>Rankings</SectionLabel>
-      <div className="col-span-3">
-        <RankingList title="Canciones" items={songs} topN={topNSongs} onTopNChange={setTopNSongs} />
-      </div>
-      <div className="col-span-3">
-        <RankingList title="Artistas" items={artists} topN={topNArtists} onTopNChange={setTopNArtists} />
-      </div>
-      <div className="col-span-3">
-        <RankingList title="Álbumes" items={albums} topN={topNAlbums} onTopNChange={setTopNAlbums} />
-      </div>
-      <div className="col-span-3">
-        <RankingList title="Artistas (canciones únicas)" items={uniqueTrackArtists} topN={topNUnique} onTopNChange={setTopNUnique} />
+      <div>
+        <SectionLabel>Rankings</SectionLabel>
+        <div className="grid grid-cols-12 gap-4">
+          <div className="col-span-3">
+            <RankingList title="Canciones" items={songs} topN={topNSongs} onTopNChange={setTopNSongs} />
+          </div>
+          <div className="col-span-3">
+            <RankingList title="Artistas" items={artists} topN={topNArtists} onTopNChange={setTopNArtists} />
+          </div>
+          <div className="col-span-3">
+            <RankingList title="Álbumes" items={albums} topN={topNAlbums} onTopNChange={setTopNAlbums} />
+          </div>
+          <div className="col-span-3">
+            <RankingList title="Artistas (canciones únicas)" items={uniqueTrackArtists} topN={topNUnique} onTopNChange={setTopNUnique} />
+          </div>
+        </div>
       </div>
 
       {/* ── Explore: Top by year + Top by artist ── */}
-      <SectionLabel>Explorar</SectionLabel>
+      <div>
+        <SectionLabel>Explorar</SectionLabel>
+        <div className="grid grid-cols-12 gap-4">
 
       {/* Top songs by year */}
       <div className={`col-span-6 ${CARD} p-5`}>
@@ -801,13 +817,17 @@ export default function Dashboard({ data }: DashboardProps) {
           </>
         )}
       </div>
+        </div>
+      </div>
 
       {/* ── Comparisons ── */}
-      <SectionLabel>Comparar</SectionLabel>
+      <div>
+        <SectionLabel>Comparar</SectionLabel>
+        <div className="grid grid-cols-12 gap-4">
 
       {/* Artist comparison */}
       <div className={`col-span-6 ${CARD} p-5`}>
-        <h3 className="mb-3 text-sm font-semibold text-zinc-100">Comparar artistas</h3>
+        <h3 className="mb-3 text-sm font-bold text-white">Comparar artistas</h3>
         <div className="mb-3 max-w-sm">
           <Autocomplete
             suggestions={artistNames.filter((n) => !compareArtists.includes(n))}
@@ -901,8 +921,13 @@ export default function Dashboard({ data }: DashboardProps) {
         )}
       </div>
 
+        </div>
+      </div>
+
       {/* ── Trends ── */}
-      <SectionLabel>Tendencias</SectionLabel>
+      <div>
+        <SectionLabel>Tendencias</SectionLabel>
+        <div className="grid grid-cols-12 gap-4">
 
       {/* Monthly Trend — full width */}
       <div className={`col-span-12 ${CARD} p-4`}>
@@ -922,7 +947,7 @@ export default function Dashboard({ data }: DashboardProps) {
       </div>
 
       {/* Hourly Polar | Weekday | Monthly Average */}
-      <div className={`col-span-4 ${CARD} p-4`}>
+      <div className={`col-span-5 ${CARD} p-4`}>
         <PlotlyChart
           data={[
             {
@@ -1125,251 +1150,258 @@ export default function Dashboard({ data }: DashboardProps) {
         )}
       </div>
 
+        </div>
+      </div>
+
       {/* ── Skip analysis ── */}
-      <SectionLabel>Skips</SectionLabel>
+      <div>
+        <SectionLabel>Skips</SectionLabel>
+        <div className="grid grid-cols-12 gap-4">
+          {/* Skip stat cards — bento sub-grid */}
+          <div className="col-span-5 grid grid-cols-2 auto-rows-[90px] gap-4">
+            <div className="col-span-1 row-span-2">
+              <StatCard label="Canciones skipeadas" value={`${skips.skipPercent}%`} sub={`${skips.totalSkips.toLocaleString()} skips totales`} accent className="h-full" />
+            </div>
+            <div className="col-span-1">
+              <StatCard label="Tiempo medio antes de skip" value={`${skips.avgSecondsBeforeSkip}s`} sub="segundos de media" className="h-full" />
+            </div>
+            <div className="col-span-1">
+              <StatCard label="Completadas" value={`${(100 - skips.skipPercent).toFixed(1)}%`} sub="hasta el final" className="h-full" />
+            </div>
+          </div>
+          <div className={`col-span-7 ${CARD} p-4`}>
+            <PlotlyChart
+              data={[
+                {
+                  type: "pie",
+                  labels: skips.reasonEndDistribution.map((r) => r.name),
+                  values: skips.reasonEndDistribution.map((r) => r.count),
+                  hole: 0.45,
+                  marker: {
+                    colors: ["#e74c3c", "#f39c12", "#1DB954", "#22c55e", "#9b59b6",
+                             "#3498db", "#1abc9c", "#e67e22", "#e84393", "#00cec9"],
+                  },
+                  textinfo: "label+percent",
+                  textposition: "outside",
+                  textfont: { size: 10 },
+                  hovertemplate: "%{label}<br>%{value:,} veces (%{percent})<extra></extra>",
+                },
+              ]}
+              layout={{
+                ...chartLayout("Cómo terminan tus canciones"),
+                height: 380,
+                showlegend: true,
+                legend: { font: { color: "#a1a1aa", size: 10 } },
+                margin: { t: 40, b: 10, l: 10, r: 10 },
+              }}
+              config={chartConfig}
+              style={{ width: "100%" }}
+            />
+          </div>
 
-      {/* Skip stat cards */}
-      <div className="col-span-3">
-        <StatCard label="Canciones skipeadas" value={`${skips.skipPercent}%`} sub={`${skips.totalSkips.toLocaleString()} skips totales`} />
-      </div>
-      <div className="col-span-3">
-        <StatCard label="Tiempo medio antes de skip" value={`${skips.avgSecondsBeforeSkip}s`} sub="segundos de media" />
-      </div>
-      <div className="col-span-3">
-        <StatCard label="Canciones completadas" value={`${(100 - skips.skipPercent).toFixed(1)}%`} sub="escuchadas hasta el final" />
-      </div>
-      <div className="col-span-3">
-        <StatCard
-          label="Hora con más skips"
-          value={`${skips.skipRateByHour.indexOf(Math.max(...skips.skipRateByHour))}h`}
-          sub={`${Math.max(...skips.skipRateByHour)}% de skip rate`}
-        />
-      </div>
+          <div className={`col-span-8 ${CARD} p-4`}>
+            <PlotlyChart
+              data={[
+                {
+                  type: "bar",
+                  x: skips.skipRateByYear.map((y) => y.year),
+                  y: skips.skipRateByYear.map((y) => y.rate),
+                  marker: {
+                    color: skips.skipRateByYear.map((y) => y.rate),
+                    colorscale: [[0, "#22c55e"], [1, "#e74c3c"]],
+                  },
+                  text: skips.skipRateByYear.map((y) => `${y.rate}%`),
+                  textposition: "outside" as const,
+                  textfont: { color: "#a1a1aa", size: 11 },
+                },
+              ]}
+              layout={chartLayout("Evolución del % de skips por año", {
+                height: 340,
+                yaxis: { gridcolor: "#1a1a1a", title: { text: "% skip" } },
+              })}
+              config={chartConfig}
+              style={{ width: "100%" }}
+            />
+          </div>
+          <div className={`col-span-4 ${CARD} p-5 flex flex-col justify-center items-center`}>
+            <p className="text-6xl font-black text-amber-400">{skips.skipRateByHour.indexOf(Math.max(...skips.skipRateByHour))}h</p>
+            <p className="mt-2 text-xs font-bold uppercase tracking-wider text-zinc-500">Hora con más skips</p>
+            <p className="text-sm text-zinc-600">{Math.max(...skips.skipRateByHour)}% skip rate</p>
+          </div>
 
-      {/* How songs end + skip rate by year */}
-      <div className={`col-span-5 ${CARD} p-4`}>
-        <PlotlyChart
-          data={[
-            {
-              type: "pie",
-              labels: skips.reasonEndDistribution.map((r) => r.name),
-              values: skips.reasonEndDistribution.map((r) => r.count),
-              hole: 0.45,
-              marker: {
-                colors: ["#e74c3c", "#f39c12", "#1DB954", "#22c55e", "#9b59b6",
-                         "#3498db", "#1abc9c", "#e67e22", "#e84393", "#00cec9"],
-              },
-              textinfo: "label+percent",
-              textposition: "outside",
-              textfont: { size: 10 },
-              hovertemplate: "%{label}<br>%{value:,} veces (%{percent})<extra></extra>",
-            },
-          ]}
-          layout={{
-            ...chartLayout("Cómo terminan tus canciones"),
-            height: 380,
-            showlegend: true,
-            legend: { font: { color: "#a1a1aa", size: 10 } },
-            margin: { t: 40, b: 10, l: 10, r: 10 },
-          }}
-          config={chartConfig}
-          style={{ width: "100%" }}
-        />
-      </div>
-      <div className={`col-span-7 ${CARD} p-4`}>
-        <PlotlyChart
-          data={[
-            {
-              type: "bar",
-              x: skips.skipRateByYear.map((y) => y.year),
-              y: skips.skipRateByYear.map((y) => y.rate),
-              marker: {
-                color: skips.skipRateByYear.map((y) => y.rate),
-                colorscale: [[0, "#22c55e"], [1, "#e74c3c"]],
-              },
-              text: skips.skipRateByYear.map((y) => `${y.rate}%`),
-              textposition: "outside" as const,
-              textfont: { color: "#a1a1aa", size: 11 },
-            },
-          ]}
-          layout={chartLayout("Evolución del % de skips por año", {
-            height: 380,
-            yaxis: { gridcolor: "#27272a", title: { text: "% skip" } },
-          })}
-          config={chartConfig}
-          style={{ width: "100%" }}
-        />
-      </div>
+          {/* Skip rate by hour */}
+          <div className={`col-span-12 ${CARD} p-4`}>
+            <PlotlyChart
+              data={[
+                {
+                  type: "bar",
+                  x: hourLabels,
+                  y: skips.skipRateByHour,
+                  marker: {
+                    color: skips.skipRateByHour,
+                    colorscale: [[0, "#22c55e"], [1, "#e74c3c"]],
+                  },
+                },
+              ]}
+              layout={chartLayout("% de skips por hora del día", {
+                height: 260,
+                yaxis: { gridcolor: "#1a1a1a", title: { text: "% skip" } },
+              })}
+              config={chartConfig}
+              style={{ width: "100%" }}
+            />
+          </div>
 
-      {/* Skip rate by hour */}
-      <div className={`col-span-12 ${CARD} p-4`}>
-        <PlotlyChart
-          data={[
-            {
-              type: "bar",
-              x: hourLabels,
-              y: skips.skipRateByHour,
-              marker: {
-                color: skips.skipRateByHour,
-                colorscale: [[0, "#22c55e"], [1, "#e74c3c"]],
-              },
-            },
-          ]}
-          layout={chartLayout("% de skips por hora del día", {
-            height: 260,
-            yaxis: { gridcolor: "#27272a", title: { text: "% skip" } },
-          })}
-          config={chartConfig}
-          style={{ width: "100%" }}
-        />
-      </div>
-
-      {/* Most skipped songs + artists */}
-      <div className={`col-span-6 ${CARD} p-4`}>
-        <PlotlyChart
-          data={[
-            {
-              type: "bar",
-              x: skips.mostSkippedSongs.map((s) => s.count),
-              y: skips.mostSkippedSongs.map((s) => s.name),
-              orientation: "h" as const,
-              marker: { color: "#e74c3c" },
-            },
-          ]}
-          layout={chartLayout("Canciones más skipeadas", {
-            height: Math.max(320, skips.mostSkippedSongs.length * 26 + 70),
-            yaxis: { gridcolor: "#27272a", autorange: "reversed" as const },
-            xaxis: { gridcolor: "#27272a", title: { text: "Skips" } },
-            margin: { l: 220, t: 40, b: 50, r: 16 },
-          })}
-          config={chartConfig}
-          style={{ width: "100%" }}
-        />
-      </div>
-      <div className={`col-span-6 ${CARD} p-4`}>
-        <PlotlyChart
-          data={[
-            {
-              type: "bar",
-              x: skips.mostSkippedArtists.map((a) => a.skipRate),
-              y: skips.mostSkippedArtists.map((a) => a.name),
-              orientation: "h" as const,
-              marker: {
-                color: skips.mostSkippedArtists.map((a) => a.skipRate),
-                colorscale: [[0, "#f39c12"], [1, "#e74c3c"]],
-              },
-              text: skips.mostSkippedArtists.map(
-                (a) => `${a.skipRate}% (${a.skips}/${a.total})`
-              ),
-              textposition: "outside" as const,
-              textfont: { color: "#a1a1aa", size: 10 },
-              hovertemplate: "%{y}<br>%{x}% skip rate<br>%{text}<extra></extra>",
-            },
-          ]}
-          layout={chartLayout("Artistas con mayor % de skip (mín. 20 plays)", {
-            height: Math.max(320, skips.mostSkippedArtists.length * 26 + 70),
-            yaxis: { gridcolor: "#27272a", autorange: "reversed" as const },
-            xaxis: { gridcolor: "#27272a", title: { text: "% skip" } },
-            margin: { l: 180, t: 40, b: 50, r: 70 },
-          })}
-          config={chartConfig}
-          style={{ width: "100%" }}
-        />
+          {/* Most skipped songs + artists */}
+          <div className={`col-span-6 ${CARD} p-4`}>
+            <PlotlyChart
+              data={[
+                {
+                  type: "bar",
+                  x: skips.mostSkippedSongs.map((s) => s.count),
+                  y: skips.mostSkippedSongs.map((s) => s.name),
+                  orientation: "h" as const,
+                  marker: { color: "#e74c3c" },
+                },
+              ]}
+              layout={chartLayout("Canciones más skipeadas", {
+                height: Math.max(320, skips.mostSkippedSongs.length * 26 + 70),
+                yaxis: { gridcolor: "#1a1a1a", autorange: "reversed" as const },
+                xaxis: { gridcolor: "#1a1a1a", title: { text: "Skips" } },
+                margin: { l: 220, t: 40, b: 50, r: 16 },
+              })}
+              config={chartConfig}
+              style={{ width: "100%" }}
+            />
+          </div>
+          <div className={`col-span-6 ${CARD} p-4`}>
+            <PlotlyChart
+              data={[
+                {
+                  type: "bar",
+                  x: skips.mostSkippedArtists.map((a) => a.skipRate),
+                  y: skips.mostSkippedArtists.map((a) => a.name),
+                  orientation: "h" as const,
+                  marker: {
+                    color: skips.mostSkippedArtists.map((a) => a.skipRate),
+                    colorscale: [[0, "#f39c12"], [1, "#e74c3c"]],
+                  },
+                  text: skips.mostSkippedArtists.map(
+                    (a) => `${a.skipRate}% (${a.skips}/${a.total})`
+                  ),
+                  textposition: "outside" as const,
+                  textfont: { color: "#a1a1aa", size: 10 },
+                  hovertemplate: "%{y}<br>%{x}% skip rate<br>%{text}<extra></extra>",
+                },
+              ]}
+              layout={chartLayout("Artistas con mayor % de skip (mín. 20 plays)", {
+                height: Math.max(320, skips.mostSkippedArtists.length * 26 + 70),
+                yaxis: { gridcolor: "#1a1a1a", autorange: "reversed" as const },
+                xaxis: { gridcolor: "#1a1a1a", title: { text: "% skip" } },
+                margin: { l: 180, t: 40, b: 50, r: 70 },
+              })}
+              config={chartConfig}
+              style={{ width: "100%" }}
+            />
+          </div>
+        </div>
       </div>
 
       {/* ── Geography ── */}
-      <SectionLabel>Geografía</SectionLabel>
-
-      {/* Country Pie + World Map */}
-      <div className={`col-span-5 ${CARD} p-4`}>
-        <PlotlyChart
-          data={[
-            {
-              type: "pie",
-              labels: countries.map(
-                (c) =>
-                  `${c.name} (${c.count.toLocaleString()} - ${((c.count / totalCountryStreams) * 100).toFixed(1)}%)`
-              ),
-              values: countries.map((c) => c.count),
-              marker: { colors: COUNTRY_COLORS },
-              textinfo: "label+percent",
-              textposition: "outside",
-              hovertemplate: "%{label}<br>%{value} streams<extra></extra>",
-            },
-          ]}
-          layout={{
-            ...chartLayout("Distribución por País"),
-            height: 440,
-            showlegend: true,
-            legend: { font: { color: "#a1a1aa", size: 10 } },
-            margin: { t: 40, b: 10, l: 10, r: 10 },
-          }}
-          config={chartConfig}
-          style={{ width: "100%" }}
-        />
-      </div>
-      <div className={`col-span-7 ${CARD} p-4`}>
-        <PlotlyChart
-          data={[
-            {
-              type: "choropleth",
-              locationmode: "ISO-3" as const,
-              locations: countriesAll.map((c) => iso2ToIso3(c.name)),
-              z: countriesAll.map((c) => {
-                const n = c.count;
-                if (n <= 100) return 1;
-                if (n <= 500) return 2;
-                if (n <= 2000) return 3;
-                if (n <= 8000) return 4;
-                if (n <= 25000) return 5;
-                if (n <= 60000) return 6;
-                return 7;
-              }),
-              zmin: 1,
-              zmax: 7,
-              text: countriesAll.map(
-                (c) => `${c.name}: ${c.count.toLocaleString()} streams`
-              ),
-              hoverinfo: "text" as const,
-              colorscale: [
-                [0, "#14532d"],
-                [0.167, "#166534"],
-                [0.333, "#15803d"],
-                [0.5, "#16a34a"],
-                [0.667, "#22c55e"],
-                [0.833, "#4ade80"],
-                [1, "#1ed760"],
-              ],
-              colorbar: {
-                title: { text: "Streams", font: { color: "#a1a1aa" } },
-                tickfont: { color: "#a1a1aa" },
-                tickvals: [1, 2, 3, 4, 5, 6, 7],
-                ticktext: ["1–100", "101–500", "501–2k", "2k–8k", "8k–25k", "25k–60k", "60k+"],
-              },
-              marker: { line: { color: "#22c55e", width: 1 } },
-            },
-          ]}
-          layout={{
-            ...chartLayout("Mapa de escuchas por país"),
-            height: 440,
-            geo: {
-              bgcolor: "transparent",
-              showframe: false,
-              showcoastlines: true,
-              coastlinecolor: "#3f3f46",
-              showland: true,
-              landcolor: "#18181b",
-              showocean: true,
-              oceancolor: "#09090b",
-              showcountries: true,
-              countrycolor: "#27272a",
-              projection: { type: "natural earth" as const },
-            },
-            margin: { t: 40, b: 10, l: 10, r: 10 },
-          }}
-          config={chartConfig}
-          style={{ width: "100%" }}
-        />
+      <div>
+        <SectionLabel>Geografía</SectionLabel>
+        <div className="grid grid-cols-12 gap-4">
+          <div className={`col-span-4 ${CARD} p-4`}>
+            <PlotlyChart
+              data={[
+                {
+                  type: "pie",
+                  labels: countries.map(
+                    (c) =>
+                      `${c.name} (${c.count.toLocaleString()} - ${((c.count / totalCountryStreams) * 100).toFixed(1)}%)`
+                  ),
+                  values: countries.map((c) => c.count),
+                  marker: { colors: COUNTRY_COLORS },
+                  textinfo: "label+percent",
+                  textposition: "outside",
+                  hovertemplate: "%{label}<br>%{value} streams<extra></extra>",
+                },
+              ]}
+              layout={{
+                ...chartLayout("Distribución por País"),
+                height: 440,
+                showlegend: true,
+                legend: { font: { color: "#a1a1aa", size: 10 } },
+                margin: { t: 40, b: 10, l: 10, r: 10 },
+              }}
+              config={chartConfig}
+              style={{ width: "100%" }}
+            />
+          </div>
+          <div className={`col-span-8 ${CARD} p-4`}>
+            <PlotlyChart
+              data={[
+                {
+                  type: "choropleth",
+                  locationmode: "ISO-3" as const,
+                  locations: countriesAll.map((c) => iso2ToIso3(c.name)),
+                  z: countriesAll.map((c) => {
+                    const n = c.count;
+                    if (n <= 100) return 1;
+                    if (n <= 500) return 2;
+                    if (n <= 2000) return 3;
+                    if (n <= 8000) return 4;
+                    if (n <= 25000) return 5;
+                    if (n <= 60000) return 6;
+                    return 7;
+                  }),
+                  zmin: 1,
+                  zmax: 7,
+                  text: countriesAll.map(
+                    (c) => `${c.name}: ${c.count.toLocaleString()} streams`
+                  ),
+                  hoverinfo: "text" as const,
+                  colorscale: [
+                    [0, "#14532d"],
+                    [0.167, "#166534"],
+                    [0.333, "#15803d"],
+                    [0.5, "#16a34a"],
+                    [0.667, "#22c55e"],
+                    [0.833, "#4ade80"],
+                    [1, "#1ed760"],
+                  ],
+                  colorbar: {
+                    title: { text: "Streams", font: { color: "#a1a1aa" } },
+                    tickfont: { color: "#a1a1aa" },
+                    tickvals: [1, 2, 3, 4, 5, 6, 7],
+                    ticktext: ["1–100", "101–500", "501–2k", "2k–8k", "8k–25k", "25k–60k", "60k+"],
+                  },
+                  marker: { line: { color: "#22c55e", width: 1 } },
+                },
+              ]}
+              layout={{
+                ...chartLayout("Mapa de escuchas por país"),
+                height: 440,
+                geo: {
+                  bgcolor: "transparent",
+                  showframe: false,
+                  showcoastlines: true,
+                  coastlinecolor: "#3f3f46",
+                  showland: true,
+                  landcolor: "#111",
+                  showocean: true,
+                  oceancolor: "#0a0a0a",
+                  showcountries: true,
+                  countrycolor: "#1a1a1a",
+                  projection: { type: "natural earth" as const },
+                },
+                margin: { t: 40, b: 10, l: 10, r: 10 },
+              }}
+              config={chartConfig}
+              style={{ width: "100%" }}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
