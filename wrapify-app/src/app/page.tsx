@@ -21,18 +21,19 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 p-6 md:p-10">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-8 flex items-center justify-between">
+    <div className="min-h-screen bg-zinc-950 px-6 py-5">
+      <div className="mx-auto max-w-[1800px]">
+        {/* Header */}
+        <div className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold text-zinc-100">Wrapify</h1>
-            <span className="rounded-full bg-green-900/50 border border-green-700/40 px-3 py-1 text-sm font-medium text-green-300">
+            <h1 className="text-2xl font-bold tracking-tight text-zinc-100">Wrapify</h1>
+            <span className="rounded-full bg-green-950/60 border border-green-800/30 px-3 py-0.5 text-xs font-medium text-green-400/80">
               {stats.period} · {periodYears} {periodYears === 1 ? "año" : "años"} de música
             </span>
           </div>
           <button
             onClick={() => setData(null)}
-            className="rounded-full border border-zinc-700 px-4 py-2 text-sm text-zinc-400 transition-colors hover:bg-zinc-900 hover:text-zinc-100"
+            className="rounded-lg bg-zinc-800/60 border border-zinc-700/40 px-4 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-700/60 hover:text-zinc-200"
           >
             Cambiar datos
           </button>
