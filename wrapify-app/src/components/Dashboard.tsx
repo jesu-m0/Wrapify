@@ -27,6 +27,8 @@ import {
   songsForDay,
   dailyStreamCounts,
   topSongsByYear,
+  monthlyAverage,
+  skipStats,
   CountItem,
 } from "@/lib/stats";
 
@@ -613,6 +615,8 @@ export default function Dashboard({ data }: DashboardProps) {
   );
 
   const songsByYear = useMemo(() => topSongsByYear(data, topNYearSongs), [data, topNYearSongs]);
+  const monthAvg = useMemo(() => monthlyAverage(data), [data]);
+  const skips = useMemo(() => skipStats(data), [data]);
   const activeYear = selectedYear ?? (songsByYear.length > 0 ? songsByYear[songsByYear.length - 1].year : null);
   const activeYearSongs = songsByYear.find((y) => y.year === activeYear)?.songs ?? [];
 
@@ -829,13 +833,10 @@ export default function Dashboard({ data }: DashboardProps) {
         <PlotlyChart
           data={[
             {
-              type: "scatter",
-              mode: "lines",
+              type: "bar",
               x: monthly.map((m) => m.date),
               y: monthly.map((m) => m.count),
-              line: { color: "#1DB954", width: 2 },
-              fill: "tozeroy",
-              fillcolor: "rgba(29,185,84,0.1)",
+              marker: { color: "#1DB954" },
             },
           ]}
           layout={chartLayout("Streams por Mes", { height: 350 })}
@@ -847,21 +848,25 @@ export default function Dashboard({ data }: DashboardProps) {
       {/* Yearly Trend - full width */}
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
         <PlotlyChart
-          data={[
-            {
-              type: "bar",
-              x: yearly.map((y) => y.name),
-              y: yearly.map((y) => y.count),
-              marker: { color: "#1DB954" },
-            },
-          ]}
-          layout={chartLayout("Streams por Año", { height: 350 })}
+          data={yearly.map((y, i) => ({
+            type: "bar" as const,
+            x: [y.name],
+            y: [y.count],
+            name: y.name,
+            marker: { color: COMPARE_COLORS[i % COMPARE_COLORS.length] },
+            showlegend: true,
+          }))}
+          layout={chartLayout("Streams por Año", {
+            height: 350,
+            showlegend: true,
+            legend: { font: { color: "#a1a1aa" }, orientation: "h" as const, y: -0.15 },
+          })}
           config={chartConfig}
           style={{ width: "100%" }}
         />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-3">
         {/* Hourly Activity - Polar */}
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
           <PlotlyChart
@@ -903,6 +908,23 @@ export default function Dashboard({ data }: DashboardProps) {
               },
             ]}
             layout={chartLayout("Actividad por Día de la Semana", { height: 400 })}
+            config={chartConfig}
+            style={{ width: "100%" }}
+          />
+        </div>
+
+        {/* Monthly Average */}
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
+          <PlotlyChart
+            data={[
+              {
+                type: "bar",
+                x: monthAvg.map((m) => m.name),
+                y: monthAvg.map((m) => m.count),
+                marker: { color: "#1DB954" },
+              },
+            ]}
+            layout={chartLayout("Media de Streams por Mes", { height: 400 })}
             config={chartConfig}
             style={{ width: "100%" }}
           />
@@ -1057,6 +1079,36 @@ export default function Dashboard({ data }: DashboardProps) {
             style={{ width: "100%" }}
           />
         )}
+      </div>
+
+      {/* Skip Stats */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+          <h3 className="mb-2 text-base font-semibold text-zinc-100">Skips</h3>
+          <p className="text-4xl font-bold text-zinc-100">{skips.skipPercent}%</p>
+          <p className="mt-1 text-sm text-zinc-500">de canciones fueron skipeadas</p>
+        </div>
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
+          <PlotlyChart
+            data={[
+              {
+                type: "bar",
+                x: skips.mostSkipped.map((s) => s.count),
+                y: skips.mostSkipped.map((s) => s.name),
+                orientation: "h" as const,
+                marker: { color: "#e74c3c" },
+              },
+            ]}
+            layout={chartLayout("Canciones más skipeadas", {
+              height: Math.max(300, skips.mostSkipped.length * 28 + 80),
+              yaxis: { gridcolor: "#27272a", autorange: "reversed" as const },
+              xaxis: { gridcolor: "#27272a", title: { text: "Skips" } },
+              margin: { l: 250, t: 50, b: 50, r: 20 },
+            })}
+            config={chartConfig}
+            style={{ width: "100%" }}
+          />
+        </div>
       </div>
 
       {/* Country Distribution - Pie */}

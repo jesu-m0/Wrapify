@@ -159,6 +159,50 @@ export function yearlyTrend(streams: SpotifyStream[]): CountItem[] {
     .map(([year, count]) => ({ name: String(year), count }));
 }
 
+export function monthlyAverage(streams: SpotifyStream[]): CountItem[] {
+  const monthNames = [
+    "Ene", "Feb", "Mar", "Abr", "May", "Jun",
+    "Jul", "Ago", "Sep", "Oct", "Nov", "Dic",
+  ];
+  const totals = new Array(12).fill(0);
+  const yearsPerMonth = Array.from({ length: 12 }, () => new Set<number>());
+  for (const s of streams) {
+    totals[s.month - 1] += 1;
+    yearsPerMonth[s.month - 1].add(s.year);
+  }
+  return monthNames.map((name, i) => ({
+    name,
+    count: yearsPerMonth[i].size > 0 ? Math.round(totals[i] / yearsPerMonth[i].size) : 0,
+  }));
+}
+
+export function skipStats(streams: SpotifyStream[]): {
+  skipPercent: number;
+  mostSkipped: CountItem[];
+} {
+  let skipped = 0;
+  const skipMap = new Map<string, number>();
+  for (const s of streams) {
+    if (s.skipped) {
+      skipped++;
+      const track = s.master_metadata_track_name;
+      const artist = s.master_metadata_album_artist_name;
+      if (track && artist) {
+        const key = `${track} - ${artist}`;
+        skipMap.set(key, (skipMap.get(key) || 0) + 1);
+      }
+    }
+  }
+  const mostSkipped = Array.from(skipMap.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 15)
+    .map(([name, count]) => ({ name, count }));
+  return {
+    skipPercent: streams.length > 0 ? Math.round((skipped / streams.length) * 1000) / 10 : 0,
+    mostSkipped,
+  };
+}
+
 export function hourDayHeatmap(streams: SpotifyStream[]): number[][] {
   // rows reordered to Mon-Sun
   const grid: number[][] = Array.from({ length: 7 }, () => new Array(24).fill(0));

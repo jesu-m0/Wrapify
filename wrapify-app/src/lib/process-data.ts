@@ -2,7 +2,7 @@ import { SpotifyStreamRaw, SpotifyStream } from "@/types/spotify";
 
 export function processRawStreams(rawStreams: SpotifyStreamRaw[]): SpotifyStream[] {
   return rawStreams
-    .filter((s) => s.master_metadata_track_name !== null)
+    .filter((s) => s.master_metadata_track_name !== null && s.ms_played > 0)
     .map((s) => {
       const dt = new Date(s.ts);
       return {
