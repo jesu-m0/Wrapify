@@ -2,9 +2,7 @@
 
 - Revisar gráfico de actividad por hora del día
 - Poner todos los años en el gráfico de streams por año (en las labels)
-- Revisar si funciona al subir únicamente la carpeta que llega de spotify (hacer guia rapida y que se muestre en tres pasos sencillos en la main page)
 - Se podría hacer algo con la columna que indica cómo se terminó la canción (porcentaje de canciones mas skipeadas, canción mas skipeada) - ME GUSTA.
-- Top canciones por año
 - Número canciones más escuchadas en un día (una lista con el nombre de la canción, el día y el número de veces que se escuchó)
 - Poder elegir un mes y que salga el top de ese mes o en un período de tiempo (lista y gráfica como las que ya tenemos)
 -   En la gráfica de las canciones poner también el número total de escuchas de las canciones elegidas
@@ -16,3 +14,10 @@ Poner enlaces a la wikipedia del artista??
 - De los skips yo creo que hay demasiada info, yo creo que no interesa tanto pero se puede hablar la próxima vez que nos conectemos a DC
     agree. le pedi unos pocos a modo de brainstorming
 
+
+
+
+
+- step tutorial para descargarte historial
+- bichear generos con artistas y tal: everynoise.com
+- 

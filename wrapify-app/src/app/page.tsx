@@ -1,23 +1,64 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useTransition } from "react";
 import { SpotifyStream } from "@/types/spotify";
 import UploadPage from "@/components/UploadPage";
 import Dashboard from "@/components/Dashboard";
-import { summaryStats } from "@/lib/stats";
+import DashboardSkeleton from "@/components/DashboardSkeleton";
+import DateRangeSlider from "@/components/DateRangeSlider";
+import { summaryStats, generateMonthRange } from "@/lib/stats";
 
 export default function Home() {
   const [data, setData] = useState<SpotifyStream[] | null>(null);
+  const [range, setRange] = useState<[number, number] | null>(null);
+  const [isPending, startTransition] = useTransition();
 
-  const stats = useMemo(() => (data ? summaryStats(data) : null), [data]);
+  // All months in the full dataset
+  const allMonths = useMemo(() => (data ? generateMonthRange(data) : []), [data]);
+
+  // Applied range (default = full dataset)
+  const appliedRange: [number, number] = range ?? [0, Math.max(0, allMonths.length - 1)];
+
+  // Filtered data based on the applied month range
+  const filteredData = useMemo(() => {
+    if (!data || allMonths.length === 0) return data;
+    const [lo, hi] = appliedRange;
+    if (lo === 0 && hi === allMonths.length - 1) return data;
+    const startMonth = allMonths[lo]; // "YYYY-MM"
+    const endMonth = allMonths[hi];
+    return data.filter((s) => {
+      const ym = `${s.year}-${String(s.month).padStart(2, "0")}`;
+      return ym >= startMonth && ym <= endMonth;
+    });
+  }, [data, allMonths, appliedRange]);
+
+  const stats = useMemo(() => (filteredData ? summaryStats(filteredData) : null), [filteredData]);
   const periodYears = useMemo(() => {
     if (!stats) return 0;
     const [minStr, maxStr] = stats.period.split(" - ");
     return Math.max(1, Number(maxStr) - Number(minStr));
   }, [stats]);
 
-  if (!data || !stats) {
-    return <UploadPage onDataLoaded={setData} />;
+  // Initialize range when data is loaded
+  const handleDataLoaded = useCallback(
+    (d: SpotifyStream[]) => {
+      setData(d);
+      setRange(null); // will default to full range
+    },
+    []
+  );
+
+  const handleRangeApply = useCallback(
+    (newRange: [number, number]) => {
+      startTransition(() => {
+        setRange(newRange);
+      });
+    },
+    []
+  );
+
+  if (!data || !stats || !filteredData) {
+    return <UploadPage onDataLoaded={handleDataLoaded} />;
   }
 
   return (
@@ -38,7 +79,19 @@ export default function Home() {
             Cambiar datos
           </button>
         </div>
-        <Dashboard data={data} />
+
+        {/* Date range slider */}
+        <div className="mb-5">
+          <DateRangeSlider
+            months={allMonths}
+            appliedRange={appliedRange}
+            onApply={handleRangeApply}
+            loading={isPending}
+          />
+        </div>
+
+        {/* Dashboard or skeleton */}
+        {isPending ? <DashboardSkeleton /> : <Dashboard data={filteredData} />}
       </div>
     </div>
   );

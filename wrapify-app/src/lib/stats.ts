@@ -10,7 +10,7 @@ export interface TimeSeriesItem {
   count: number;
 }
 
-function generateMonthRange(streams: SpotifyStream[]): string[] {
+export function generateMonthRange(streams: SpotifyStream[]): string[] {
   if (streams.length === 0) return [];
   let minY = Infinity, maxY = -Infinity, minM = 12, maxM = 1;
   for (const s of streams) {
@@ -302,6 +302,27 @@ export function busiestDay(streams: SpotifyStream[]): { date: string; count: num
   return best;
 }
 
+export function topSongsSingleDay(
+  streams: SpotifyStream[],
+  limit = 10
+): { track: string; artist: string; date: string; count: number }[] {
+  const map = new Map<string, number>();
+  for (const s of streams) {
+    const track = s.master_metadata_track_name;
+    const artist = s.master_metadata_album_artist_name;
+    if (!track || !artist) continue;
+    const key = `${track}\0${artist}\0${s.date}`;
+    map.set(key, (map.get(key) || 0) + 1);
+  }
+  return Array.from(map.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([key, count]) => {
+      const [track, artist, date] = key.split("\0");
+      return { track, artist, date, count };
+    });
+}
+
 export function artistsByUniqueTracks(streams: SpotifyStream[], limit = 10): CountItem[] {
   const map = new Map<string, Set<string>>();
   for (const s of streams) {
@@ -457,6 +478,511 @@ export function topSongsByYear(
         .slice(0, limit)
         .map(([name, count]) => ({ name, count })),
     }));
+}
+
+/* ── Scatter-plot data ── */
+
+export interface ScatterPoint {
+  name: string;
+  x: number;
+  y: number;
+}
+
+/** Chart 1: Per-song — plays vs skip rate (min 5 plays) */
+export function scatterSongPlaysVsSkipRate(streams: SpotifyStream[]): ScatterPoint[] {
+  const plays = new Map<string, number>();
+  const skips = new Map<string, number>();
+  for (const s of streams) {
+    const t = s.master_metadata_track_name;
+    const a = s.master_metadata_album_artist_name;
+    if (!t || !a) continue;
+    const key = `${t} - ${a}`;
+    plays.set(key, (plays.get(key) || 0) + 1);
+    if (s.skipped) skips.set(key, (skips.get(key) || 0) + 1);
+  }
+  const MIN = 5;
+  const result: ScatterPoint[] = [];
+  for (const [name, total] of plays) {
+    if (total < MIN) continue;
+    const skipCount = skips.get(name) || 0;
+    result.push({ name, x: total, y: Math.round((skipCount / total) * 1000) / 10 });
+  }
+  return result;
+}
+
+/** Chart 2: Per-artist — plays vs unique tracks */
+export function scatterArtistPlaysVsTracks(streams: SpotifyStream[]): ScatterPoint[] {
+  const plays = new Map<string, number>();
+  const tracks = new Map<string, Set<string>>();
+  for (const s of streams) {
+    const a = s.master_metadata_album_artist_name;
+    const t = s.master_metadata_track_name;
+    if (!a) continue;
+    plays.set(a, (plays.get(a) || 0) + 1);
+    if (t) {
+      if (!tracks.has(a)) tracks.set(a, new Set());
+      tracks.get(a)!.add(t);
+    }
+  }
+  const result: ScatterPoint[] = [];
+  for (const [name, total] of plays) {
+    result.push({ name, x: total, y: tracks.get(name)?.size || 0 });
+  }
+  return result;
+}
+
+/** Chart 3: Per-artist — plays vs avg listen duration (seconds) */
+export function scatterArtistPlaysVsDuration(streams: SpotifyStream[]): ScatterPoint[] {
+  const plays = new Map<string, number>();
+  const totalMs = new Map<string, number>();
+  for (const s of streams) {
+    const a = s.master_metadata_album_artist_name;
+    if (!a) continue;
+    plays.set(a, (plays.get(a) || 0) + 1);
+    totalMs.set(a, (totalMs.get(a) || 0) + s.ms_played);
+  }
+  const MIN = 5;
+  const result: ScatterPoint[] = [];
+  for (const [name, total] of plays) {
+    if (total < MIN) continue;
+    const avgSec = Math.round((totalMs.get(name)! / total) / 1000);
+    result.push({ name, x: total, y: avgSec });
+  }
+  return result;
+}
+
+/** Chart 4: Per-artist — first listen date (as days since epoch) vs plays in last 6 months */
+export function scatterArtistAgeVsRecent(streams: SpotifyStream[]): (ScatterPoint & { firstDate: string })[] {
+  const firstDate = new Map<string, string>();
+  const recentPlays = new Map<string, number>();
+  const totalPlays = new Map<string, number>();
+
+  // Find the latest date in the dataset
+  let maxDate = "";
+  for (const s of streams) {
+    if (s.date > maxDate) maxDate = s.date;
+  }
+  // 6 months before maxDate
+  const cutoff = new Date(maxDate);
+  cutoff.setMonth(cutoff.getMonth() - 6);
+  const cutoffStr = cutoff.toISOString().slice(0, 10);
+
+  for (const s of streams) {
+    const a = s.master_metadata_album_artist_name;
+    if (!a) continue;
+    totalPlays.set(a, (totalPlays.get(a) || 0) + 1);
+    const prev = firstDate.get(a);
+    if (!prev || s.date < prev) firstDate.set(a, s.date);
+    if (s.date >= cutoffStr) recentPlays.set(a, (recentPlays.get(a) || 0) + 1);
+  }
+
+  const MIN = 5;
+  const result: (ScatterPoint & { firstDate: string })[] = [];
+  for (const [name, total] of totalPlays) {
+    if (total < MIN) continue;
+    const fd = firstDate.get(name)!;
+    // X = days since first listen (from earliest to latest in dataset)
+    const daysSinceFirst = Math.round((new Date(maxDate).getTime() - new Date(fd).getTime()) / 86400000);
+    const recent = recentPlays.get(name) || 0;
+    result.push({ name, x: daysSinceFirst, y: recent, firstDate: fd });
+  }
+  return result;
+}
+
+/* ── Advanced analytics ── */
+
+/** Lorenz curve: cumulative % of plays vs cumulative % of artists (sorted ascending) */
+export function lorenzCurve(streams: SpotifyStream[]): { x: number[]; y: number[] } {
+  const map = new Map<string, number>();
+  for (const s of streams) {
+    const a = s.master_metadata_album_artist_name;
+    if (a) map.set(a, (map.get(a) || 0) + 1);
+  }
+  const counts = Array.from(map.values()).sort((a, b) => a - b);
+  const total = counts.reduce((a, b) => a + b, 0);
+  const n = counts.length;
+  const x = [0];
+  const y = [0];
+  let cumSum = 0;
+  for (let i = 0; i < n; i++) {
+    cumSum += counts[i];
+    x.push(((i + 1) / n) * 100);
+    y.push((cumSum / total) * 100);
+  }
+  return { x, y };
+}
+
+/** Discovery rate: new unique artists and songs per month */
+export function discoveryRate(streams: SpotifyStream[]): {
+  months: string[];
+  newArtists: number[];
+  newSongs: number[];
+} {
+  const sorted = [...streams].sort((a, b) => a.ts.localeCompare(b.ts));
+  const seenArtists = new Set<string>();
+  const seenSongs = new Set<string>();
+  const monthArtists = new Map<string, number>();
+  const monthSongs = new Map<string, number>();
+
+  for (const s of sorted) {
+    const month = `${s.year}-${String(s.month).padStart(2, "0")}`;
+    const a = s.master_metadata_album_artist_name;
+    const t = s.master_metadata_track_name;
+    if (a && !seenArtists.has(a)) {
+      seenArtists.add(a);
+      monthArtists.set(month, (monthArtists.get(month) || 0) + 1);
+    }
+    if (t && a) {
+      const key = `${t}|||${a}`;
+      if (!seenSongs.has(key)) {
+        seenSongs.add(key);
+        monthSongs.set(month, (monthSongs.get(month) || 0) + 1);
+      }
+    }
+  }
+
+  const allMonths = generateMonthRange(streams);
+  return {
+    months: allMonths,
+    newArtists: allMonths.map((m) => monthArtists.get(m) || 0),
+    newSongs: allMonths.map((m) => monthSongs.get(m) || 0),
+  };
+}
+
+/** Seasonal artists: top N artists × 12 months heatmap */
+export function seasonalArtists(
+  streams: SpotifyStream[],
+  limit = 20
+): { artists: string[]; months: string[]; grid: number[][] } {
+  const monthNames = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+  const artistTotal = new Map<string, number>();
+  for (const s of streams) {
+    const a = s.master_metadata_album_artist_name;
+    if (a) artistTotal.set(a, (artistTotal.get(a) || 0) + 1);
+  }
+  const topArtistNames = Array.from(artistTotal.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([name]) => name);
+
+  const grid: number[][] = topArtistNames.map(() => new Array(12).fill(0));
+  const artistIdx = new Map(topArtistNames.map((a, i) => [a, i]));
+
+  for (const s of streams) {
+    const a = s.master_metadata_album_artist_name;
+    if (!a) continue;
+    const idx = artistIdx.get(a);
+    if (idx !== undefined) grid[idx][s.month - 1]++;
+  }
+
+  return { artists: topArtistNames, months: monthNames, grid };
+}
+
+/** Listening sessions: group streams with <5 min gap */
+export interface ListeningSession {
+  start: string;
+  end: string;
+  date: string;
+  durationMin: number;
+  trackCount: number;
+}
+
+export function listeningSessions(streams: SpotifyStream[]): {
+  sessions: ListeningSession[];
+  avgDuration: number;
+  longestSession: ListeningSession | null;
+  durationDistribution: { bucket: string; count: number }[];
+} {
+  const sorted = [...streams].sort((a, b) => a.ts.localeCompare(b.ts));
+  const GAP_MS = 5 * 60 * 1000;
+  const sessions: ListeningSession[] = [];
+  let sessionStart = sorted[0]?.ts || "";
+  let sessionEnd = sessionStart;
+  let trackCount = 1;
+
+  for (let i = 1; i < sorted.length; i++) {
+    const prev = new Date(sorted[i - 1].ts).getTime() + sorted[i - 1].ms_played;
+    const curr = new Date(sorted[i].ts).getTime();
+    if (curr - prev <= GAP_MS) {
+      sessionEnd = sorted[i].ts;
+      trackCount++;
+    } else {
+      const endTime = new Date(sessionEnd).getTime() + sorted[i - 1].ms_played;
+      const durMin = Math.round((endTime - new Date(sessionStart).getTime()) / 60000);
+      if (trackCount >= 2) {
+        sessions.push({
+          start: sessionStart,
+          end: sessionEnd,
+          date: sessionStart.slice(0, 10),
+          durationMin: durMin,
+          trackCount,
+        });
+      }
+      sessionStart = sorted[i].ts;
+      sessionEnd = sessionStart;
+      trackCount = 1;
+    }
+  }
+  // last session
+  if (sorted.length > 0 && trackCount >= 2) {
+    const last = sorted[sorted.length - 1];
+    const endTime = new Date(sessionEnd).getTime() + last.ms_played;
+    const durMin = Math.round((endTime - new Date(sessionStart).getTime()) / 60000);
+    sessions.push({ start: sessionStart, end: sessionEnd, date: sessionStart.slice(0, 10), durationMin: durMin, trackCount });
+  }
+
+  const avgDuration = sessions.length > 0
+    ? Math.round(sessions.reduce((a, s) => a + s.durationMin, 0) / sessions.length)
+    : 0;
+  const longestSession = sessions.length > 0
+    ? sessions.reduce((best, s) => (s.durationMin > best.durationMin ? s : best))
+    : null;
+
+  // Distribution buckets
+  const buckets = [
+    { label: "<10 min", max: 10 },
+    { label: "10-30 min", max: 30 },
+    { label: "30-60 min", max: 60 },
+    { label: "1-2h", max: 120 },
+    { label: "2-4h", max: 240 },
+    { label: "4h+", max: Infinity },
+  ];
+  const dist = buckets.map((b) => ({ bucket: b.label, count: 0 }));
+  for (const s of sessions) {
+    for (let i = 0; i < buckets.length; i++) {
+      if (s.durationMin < buckets[i].max || i === buckets.length - 1) {
+        dist[i].count++;
+        break;
+      }
+    }
+  }
+
+  return { sessions, avgDuration, longestSession, durationDistribution: dist };
+}
+
+/** One-hit wonders: artists where 80%+ of plays are one song (min 10 plays) */
+export function oneHitWonders(
+  streams: SpotifyStream[],
+  limit = 20
+): { artist: string; topSong: string; topCount: number; total: number; pct: number }[] {
+  const artistSongs = new Map<string, Map<string, number>>();
+  for (const s of streams) {
+    const a = s.master_metadata_album_artist_name;
+    const t = s.master_metadata_track_name;
+    if (!a || !t) continue;
+    if (!artistSongs.has(a)) artistSongs.set(a, new Map());
+    const songs = artistSongs.get(a)!;
+    songs.set(t, (songs.get(t) || 0) + 1);
+  }
+
+  const result: { artist: string; topSong: string; topCount: number; total: number; pct: number }[] = [];
+  for (const [artist, songs] of artistSongs) {
+    if (songs.size < 2) continue; // needs at least 2 songs available
+    const total = Array.from(songs.values()).reduce((a, b) => a + b, 0);
+    if (total < 10) continue;
+    const [topSong, topCount] = Array.from(songs.entries()).sort((a, b) => b[1] - a[1])[0];
+    const pct = Math.round((topCount / total) * 1000) / 10;
+    if (pct >= 60) result.push({ artist, topSong, topCount, total, pct });
+  }
+  return result.sort((a, b) => b.pct - a.pct).slice(0, limit);
+}
+
+/** Binge detector: days where one artist had 70%+ of plays (min 5 plays) */
+export function bingeDays(
+  streams: SpotifyStream[],
+  limit = 30
+): { date: string; artist: string; artistPlays: number; total: number; pct: number }[] {
+  const dayArtist = new Map<string, Map<string, number>>();
+  const dayTotal = new Map<string, number>();
+  for (const s of streams) {
+    const a = s.master_metadata_album_artist_name;
+    if (!a) continue;
+    dayTotal.set(s.date, (dayTotal.get(s.date) || 0) + 1);
+    if (!dayArtist.has(s.date)) dayArtist.set(s.date, new Map());
+    const artists = dayArtist.get(s.date)!;
+    artists.set(a, (artists.get(a) || 0) + 1);
+  }
+
+  const result: { date: string; artist: string; artistPlays: number; total: number; pct: number }[] = [];
+  for (const [date, artists] of dayArtist) {
+    const total = dayTotal.get(date) || 0;
+    if (total < 5) continue;
+    const [topArtist, topCount] = Array.from(artists.entries()).sort((a, b) => b[1] - a[1])[0];
+    const pct = Math.round((topCount / total) * 1000) / 10;
+    if (pct >= 70) result.push({ date, artist: topArtist, artistPlays: topCount, total, pct });
+  }
+  return result.sort((a, b) => b.pct - a.pct).slice(0, limit);
+}
+
+/** Platform trends: stacked area of platforms by month */
+export function platformTrends(streams: SpotifyStream[]): {
+  months: string[];
+  platforms: { name: string; counts: number[] }[];
+} {
+  const allMonths = generateMonthRange(streams);
+  const platMonth = new Map<string, Map<string, number>>();
+  const platTotal = new Map<string, number>();
+  for (const s of streams) {
+    const p = s.platform || "unknown";
+    const month = `${s.year}-${String(s.month).padStart(2, "0")}`;
+    platTotal.set(p, (platTotal.get(p) || 0) + 1);
+    if (!platMonth.has(p)) platMonth.set(p, new Map());
+    platMonth.get(p)!.set(month, (platMonth.get(p)!.get(month) || 0) + 1);
+  }
+
+  // Top 6 platforms, rest as "Otros"
+  const topPlats = Array.from(platTotal.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6)
+    .map(([name]) => name);
+  const topSet = new Set(topPlats);
+
+  const platforms = topPlats.map((name) => ({
+    name,
+    counts: allMonths.map((m) => platMonth.get(name)?.get(m) || 0),
+  }));
+
+  // "Otros"
+  const otherCounts = allMonths.map((m) => {
+    let sum = 0;
+    for (const [p, mmap] of platMonth) {
+      if (!topSet.has(p)) sum += mmap.get(m) || 0;
+    }
+    return sum;
+  });
+  if (otherCounts.some((c) => c > 0)) {
+    platforms.push({ name: "Otros", counts: otherCounts });
+  }
+
+  return { months: allMonths, platforms };
+}
+
+/** Offline percentage by month */
+export function offlineTrend(streams: SpotifyStream[]): { months: string[]; pct: number[] } {
+  const allMonths = generateMonthRange(streams);
+  const total = new Map<string, number>();
+  const offline = new Map<string, number>();
+  for (const s of streams) {
+    const month = `${s.year}-${String(s.month).padStart(2, "0")}`;
+    total.set(month, (total.get(month) || 0) + 1);
+    if (s.offline) offline.set(month, (offline.get(month) || 0) + 1);
+  }
+  return {
+    months: allMonths,
+    pct: allMonths.map((m) => {
+      const t = total.get(m) || 0;
+      return t > 0 ? Math.round(((offline.get(m) || 0) / t) * 1000) / 10 : 0;
+    }),
+  };
+}
+
+/** Listening streaks: consecutive days with at least 1 play */
+export function listeningStreaks(streams: SpotifyStream[]): {
+  currentStreak: number;
+  longestStreak: number;
+  longestStart: string;
+  longestEnd: string;
+  streakDistribution: { length: number; count: number }[];
+} {
+  const days = new Set<string>();
+  for (const s of streams) days.add(s.date);
+  const sorted = Array.from(days).sort();
+
+  const streaks: { start: string; end: string; length: number }[] = [];
+  let start = sorted[0];
+  let prev = sorted[0];
+  let len = 1;
+
+  for (let i = 1; i < sorted.length; i++) {
+    const prevDate = new Date(prev);
+    const currDate = new Date(sorted[i]);
+    const diffDays = Math.round((currDate.getTime() - prevDate.getTime()) / 86400000);
+    if (diffDays === 1) {
+      len++;
+    } else {
+      streaks.push({ start, end: prev, length: len });
+      start = sorted[i];
+      len = 1;
+    }
+    prev = sorted[i];
+  }
+  if (sorted.length > 0) streaks.push({ start, end: prev, length: len });
+
+  const longest = streaks.reduce((best, s) => (s.length > best.length ? s : best), streaks[0] || { start: "", end: "", length: 0 });
+  const current = streaks.length > 0 ? streaks[streaks.length - 1].length : 0;
+
+  // Distribution
+  const distMap = new Map<number, number>();
+  for (const s of streaks) {
+    const bucket = s.length >= 30 ? 30 : s.length;
+    distMap.set(bucket, (distMap.get(bucket) || 0) + 1);
+  }
+
+  return {
+    currentStreak: current,
+    longestStreak: longest.length,
+    longestStart: longest.start,
+    longestEnd: longest.end,
+    streakDistribution: Array.from(distMap.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([length, count]) => ({ length, count })),
+  };
+}
+
+/** Comeback songs: songs that peaked, dropped to 0 for 2+ months, then came back */
+export function comebackSongs(
+  streams: SpotifyStream[],
+  limit = 15
+): { name: string; peakMonth: string; peakCount: number; comebackMonth: string; comebackCount: number; gapMonths: number }[] {
+  const allMonths = generateMonthRange(streams);
+  const songMonth = new Map<string, Map<string, number>>();
+  for (const s of streams) {
+    const t = s.master_metadata_track_name;
+    const a = s.master_metadata_album_artist_name;
+    if (!t || !a) continue;
+    const key = `${t} - ${a}`;
+    const month = `${s.year}-${String(s.month).padStart(2, "0")}`;
+    if (!songMonth.has(key)) songMonth.set(key, new Map());
+    songMonth.get(key)!.set(month, (songMonth.get(key)!.get(month) || 0) + 1);
+  }
+
+  const results: { name: string; peakMonth: string; peakCount: number; comebackMonth: string; comebackCount: number; gapMonths: number }[] = [];
+
+  for (const [name, months] of songMonth) {
+    const timeline = allMonths.map((m) => months.get(m) || 0);
+    // Find peak
+    let peakIdx = 0;
+    for (let i = 1; i < timeline.length; i++) {
+      if (timeline[i] > timeline[peakIdx]) peakIdx = i;
+    }
+    if (timeline[peakIdx] < 5) continue;
+
+    // After peak, find stretch of 0s of length >= 2, then comeback
+    let gapStart = -1;
+    let gapLen = 0;
+    for (let i = peakIdx + 1; i < timeline.length; i++) {
+      if (timeline[i] === 0) {
+        if (gapStart === -1) gapStart = i;
+        gapLen++;
+      } else {
+        if (gapLen >= 2 && timeline[i] >= 3) {
+          results.push({
+            name,
+            peakMonth: allMonths[peakIdx],
+            peakCount: timeline[peakIdx],
+            comebackMonth: allMonths[i],
+            comebackCount: timeline[i],
+            gapMonths: gapLen,
+          });
+          break;
+        }
+        gapStart = -1;
+        gapLen = 0;
+      }
+    }
+  }
+
+  return results.sort((a, b) => b.gapMonths - a.gapMonths || b.comebackCount - a.comebackCount).slice(0, limit);
 }
 
 export function summaryStats(streams: SpotifyStream[]) {
