@@ -20,4 +20,8 @@ Poner enlaces a la wikipedia del artista??
 
 - step tutorial para descargarte historial
 - bichear generos con artistas y tal: everynoise.com
-- 
+- para la radiografía de reproducciones vs diversidad probar un cambio de escala, tal vez a logarítmica
+o tal vez normalizar los valores para que salgan más distribuidos. También mejorar la definición de las 
+categoría porque no puede ser que un artista con 3 reproducciones esté en la categoría Fan profundo
+- Para la radiografía de Antigüedad vs Vigencia revisar también las categorías (no puede ser que haya dos
+categorías con 0 muestras, porque el eje Y para separarlas está en 0)
