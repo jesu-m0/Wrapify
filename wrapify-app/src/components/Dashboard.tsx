@@ -1853,7 +1853,7 @@ export default function Dashboard({ data }: DashboardProps) {
           {/* One-hit wonders */}
           <div className={`col-span-6 ${CARD} p-5`}>
             <h3 className="mb-3 text-sm font-bold text-white">One-Hit Wonders personales</h3>
-            <p className="mb-3 text-[11px] text-zinc-500">Artistas donde 60%+ de tus plays son de una sola canción</p>
+            <p className="mb-3 text-[11px] text-zinc-500">Artistas donde 60%+ de tus plays son de una sola canción, mínimo 100 plays</p>
             {oneHits.length === 0 ? (
               <p className="text-sm text-zinc-600">No se encontraron one-hit wonders.</p>
             ) : (
@@ -1869,7 +1869,7 @@ export default function Dashboard({ data }: DashboardProps) {
                       <div className="w-20 h-1.5 rounded-full bg-white/5 overflow-hidden">
                         <div className="h-full rounded-full bg-amber-500" style={{ width: `${item.pct}%` }} />
                       </div>
-                      <span className="text-[11px] font-semibold text-amber-400 w-12 text-right">{item.pct}%</span>
+                      <span className="text-[11px] font-semibold text-amber-400 w-12 text-right">{item.pct}%  {item.topCount}/{item.total}</span>
                     </div>
                   </div>
                 ))}

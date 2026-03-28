@@ -763,7 +763,7 @@ export function listeningSessions(streams: SpotifyStream[]): {
 /** One-hit wonders: artists where 80%+ of plays are one song (min 10 plays) */
 export function oneHitWonders(
   streams: SpotifyStream[],
-  limit = 20
+  limit = 50
 ): { artist: string; topSong: string; topCount: number; total: number; pct: number }[] {
   const artistSongs = new Map<string, Map<string, number>>();
   for (const s of streams) {
@@ -777,14 +777,20 @@ export function oneHitWonders(
 
   const result: { artist: string; topSong: string; topCount: number; total: number; pct: number }[] = [];
   for (const [artist, songs] of artistSongs) {
-    if (songs.size < 2) continue; // needs at least 2 songs available
+    //if (songs.size < 2) continue; // needs at least 2 songs available
     const total = Array.from(songs.values()).reduce((a, b) => a + b, 0);
-    if (total < 10) continue;
+    if (total < 100) continue;
     const [topSong, topCount] = Array.from(songs.entries()).sort((a, b) => b[1] - a[1])[0];
     const pct = Math.round((topCount / total) * 1000) / 10;
     if (pct >= 60) result.push({ artist, topSong, topCount, total, pct });
   }
-  return result.sort((a, b) => b.pct - a.pct).slice(0, limit);
+  //return result.sort((a, b) => b.pct - a.pct).slice(0, limit);
+  return result
+  .sort((a, b) => {
+    if (b.pct !== a.pct) return b.pct - a.pct;
+    return b.topCount - a.topCount; // desempate
+  })
+  .slice(0, limit);
 }
 
 /** Binge detector: days where one artist had 70%+ of plays (min 5 plays) */
