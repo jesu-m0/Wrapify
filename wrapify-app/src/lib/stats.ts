@@ -796,7 +796,7 @@ export function oneHitWonders(
 /** Binge detector: days where one artist had 70%+ of plays (min 5 plays) */
 export function bingeDays(
   streams: SpotifyStream[],
-  limit = 30
+  limit = 50
 ): { date: string; artist: string; artistPlays: number; total: number; pct: number }[] {
   const dayArtist = new Map<string, Map<string, number>>();
   const dayTotal = new Map<string, number>();
