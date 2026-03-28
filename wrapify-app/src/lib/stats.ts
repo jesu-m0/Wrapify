@@ -817,7 +817,13 @@ export function bingeDays(
     const pct = Math.round((topCount / total) * 1000) / 10;
     if (pct >= 70) result.push({ date, artist: topArtist, artistPlays: topCount, total, pct });
   }
-  return result.sort((a, b) => b.pct - a.pct).slice(0, limit);
+  //return result.sort((a, b) => b.pct - a.pct).slice(0, limit);
+  return result
+  .sort((a, b) => {
+    if (b.pct !== a.pct) return b.pct - a.pct; // primero por porcentaje
+    return b.total - a.total; // desempate por total de escuchas
+  })
+  .slice(0, limit);
 }
 
 /** Platform trends: stacked area of platforms by month */

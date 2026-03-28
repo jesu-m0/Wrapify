@@ -1880,7 +1880,7 @@ export default function Dashboard({ data }: DashboardProps) {
           {/* Binge detector */}
           <div className={`col-span-6 ${CARD} p-5`}>
             <h3 className="mb-3 text-sm font-bold text-white">Binge Days</h3>
-            <p className="mb-3 text-[11px] text-zinc-500">Días donde un artista fue 70%+ de tus escuchas</p>
+            <p className="mb-3 text-[11px] text-zinc-500">Días donde un artista fue 70%+ de tus escuchas, mínimo 5 plays</p>
             {binges.length === 0 ? (
               <p className="text-sm text-zinc-600">No se encontraron binge days.</p>
             ) : (
