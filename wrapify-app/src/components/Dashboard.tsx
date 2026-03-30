@@ -1863,7 +1863,7 @@ export default function Dashboard({ data }: DashboardProps) {
           {/* One-hit wonders */}
           <div className={`col-span-6 ${CARD} p-5`}>
             <h3 className="mb-3 text-sm font-bold text-white">One-Hit Wonders personales</h3>
-            <p className="mb-3 text-[11px] text-zinc-500">Artistas donde 60%+ de tus plays son de una sola canción, mínimo 100 plays</p>
+            <p className="mb-3 text-[11px] text-zinc-500">Artistas donde 60%+ de tus plays son de una sola canción, mínimo 50 plays</p>
             {oneHits.length === 0 ? (
               <p className="text-sm text-zinc-600">No se encontraron one-hit wonders.</p>
             ) : (

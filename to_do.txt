@@ -23,3 +23,5 @@ Poner enlaces a la wikipedia del artista??
 - para la radiografía de reproducciones vs diversidad probar un cambio de escala, tal vez a logarítmica para que salgan más distribuidos.
  También mejorar la definición de las categorías porque no puede ser que un artista con 3 reproducciones esté en la categoría Fan profundo. Para ello hay que usar los percentiles en lugar de la mediana
 - Para la radiografía de Antigüedad vs Vigencia revisar también las categorías (no puede ser que haya dos categorías con 0 muestras, porque el eje Y para separarlas está en 0)
+- Al poner el navegador en pantalla dividida se desconfigura todo
+- Los podcasts se están ignorando completamente, se podría hacer algo con ellos
