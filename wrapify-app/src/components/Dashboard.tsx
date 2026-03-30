@@ -1638,8 +1638,13 @@ export default function Dashboard({ data }: DashboardProps) {
             <PlotlyChart
               data={(() => {
                 const pts = scatterAgeRecent;
-                const medX = pts.length > 0 ? [...pts].sort((a, b) => a.x - b.x)[Math.floor(pts.length / 2)].x : 0;
-                const medY = pts.length > 0 ? [...pts].sort((a, b) => a.y - b.y)[Math.floor(pts.length / 2)].y : 0;
+                //const medX = pts.length > 0 ? [...pts].sort((a, b) => a.x - b.x)[Math.floor(pts.length / 2)].x : 0;
+                const sortedX = [...pts].sort((a, b) => a.x - b.x);
+                const cutX = sortedX[Math.floor(sortedX.length * 0.2)]?.x ?? 0;
+                //const medY = pts.length > 0 ? [...pts].sort((a, b) => a.y - b.y)[Math.floor(pts.length / 2)].y : 0;
+                const nonZeroY = pts.filter(p => p.y > 0);
+                const sortedY = nonZeroY.sort((a, b) => a.y - b.y);
+                const cutY = sortedY.length > 0 ? sortedY[Math.floor(sortedY.length * 0.75)]?.y ?? 1 : 1;
                 const maxX = pts.length > 0 ? Math.max(...pts.map(p => p.x)) : 1;
                 const maxY = pts.length > 0 ? Math.max(...pts.map(p => p.y)) : 1;
                 return [
@@ -1653,9 +1658,9 @@ export default function Dashboard({ data }: DashboardProps) {
                     marker: {
                       size: 5,
                       color: pts.map(p => {
-                        if (p.x >= medX && p.y >= medY) return "#22c55e";  // clásico personal
-                        if (p.x >= medX && p.y < medY) return "#a1a1aa";   // fase superada
-                        if (p.x < medX && p.y >= medY) return "#f59e0b";   // nuevo favorito
+                        if (p.x >= cutX && p.y >= cutY) return "#22c55e";  // clásico personal
+                        if (p.x >= cutX && p.y < cutY) return "#a1a1aa";   // fase superada
+                        if (p.x < cutX && p.y >= cutY) return "#f59e0b";   // nuevo favorito
                         return "#3b82f6";                                    // recién llegado
                       }),
                       opacity: 0.6,
@@ -1664,7 +1669,7 @@ export default function Dashboard({ data }: DashboardProps) {
                   {
                     type: "scatter" as const,
                     mode: "lines" as const,
-                    x: [medX, medX],
+                    x: [cutX, cutX],
                     y: [0, maxY * 1.05],
                     line: { color: "#3f3f46", width: 1, dash: "dash" as const },
                     hoverinfo: "skip" as const,
@@ -1674,7 +1679,7 @@ export default function Dashboard({ data }: DashboardProps) {
                     type: "scatter" as const,
                     mode: "lines" as const,
                     x: [0, maxX * 1.05],
-                    y: [medY, medY],
+                    y: [cutY, cutY],
                     line: { color: "#3f3f46", width: 1, dash: "dash" as const },
                     hoverinfo: "skip" as const,
                     showlegend: false,
@@ -1683,8 +1688,13 @@ export default function Dashboard({ data }: DashboardProps) {
               })()}
               layout={(() => {
                 const pts = scatterAgeRecent;
-                const medX = pts.length > 0 ? [...pts].sort((a, b) => a.x - b.x)[Math.floor(pts.length / 2)].x : 0;
-                const medY = pts.length > 0 ? [...pts].sort((a, b) => a.y - b.y)[Math.floor(pts.length / 2)].y : 0;
+                //const medX = pts.length > 0 ? [...pts].sort((a, b) => a.x - b.x)[Math.floor(pts.length / 2)].x : 0;
+                const sortedX = [...pts].sort((a, b) => a.x - b.x);
+                const cutX = sortedX[Math.floor(sortedX.length * 0.2)]?.x ?? 0;
+                //const medY = pts.length > 0 ? [...pts].sort((a, b) => a.y - b.y)[Math.floor(pts.length / 2)].y : 0;
+                const nonZeroY = pts.filter(p => p.y > 0);
+                const sortedY = nonZeroY.sort((a, b) => a.y - b.y);
+                const cutY = sortedY.length > 0 ? sortedY[Math.floor(sortedY.length * 0.75)]?.y ?? 1 : 1;
                 const maxX = pts.length > 0 ? Math.max(...pts.map(p => p.x)) : 1;
                 const maxY = pts.length > 0 ? Math.max(...pts.map(p => p.y)) : 1;
                 return {
@@ -1695,9 +1705,9 @@ export default function Dashboard({ data }: DashboardProps) {
                   yaxis: { title: { text: "Plays últimos 6 meses" }, gridcolor: "#1a1a1a", zerolinecolor: "#1a1a1a" },
                   annotations: [
                     { x: maxX * 0.95, y: maxY * 0.95, text: "🏛️ Clásico personal", showarrow: false, font: { color: "#22c55e", size: 10 } },
-                    { x: maxX * 0.95, y: medY * 0.3, text: "📦 Fase superada", showarrow: false, font: { color: "#a1a1aa", size: 10 } },
-                    { x: medX * 0.3, y: maxY * 0.95, text: "🔥 Nuevo favorito", showarrow: false, font: { color: "#f59e0b", size: 10 } },
-                    { x: medX * 0.3, y: medY * 0.3, text: "🆕 Recién llegado", showarrow: false, font: { color: "#3b82f6", size: 10 } },
+                    { x: maxX * 0.95, y: cutY * 0.3, text: "📦 Fase superada", showarrow: false, font: { color: "#a1a1aa", size: 10 } },
+                    { x: cutX * 0.3, y: maxY * 0.95, text: "🔥 Nuevo favorito", showarrow: false, font: { color: "#f59e0b", size: 10 } },
+                    { x: cutX * 0.3, y: cutY * 0.3, text: "🆕 Recién llegado", showarrow: false, font: { color: "#3b82f6", size: 10 } },
                   ],
                 };
               })()}
