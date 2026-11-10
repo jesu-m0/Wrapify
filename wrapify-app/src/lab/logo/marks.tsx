@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect, useId, useState } from "react";
 
 /*
  * Twenty logo marks for Wrapify, all drawn on the same 32×32 grid.
@@ -421,9 +421,9 @@ function Regalo({ p, on }: MP) {
         cy={11}
         anim={on && <AT type="scale" tr={keys([[0, "1"], [0.1, "0"], [0.62, "0"], [0.7, "1.2"], [0.76, "1"], [1, "1"]])} dur={D} />}
       >
-        <ellipse cx={12} cy={8.5} rx={4.2} ry={2.6} transform="rotate(-28 12 8.5)" fill={p.k} />
-        <ellipse cx={20} cy={8.5} rx={4.2} ry={2.6} transform="rotate(28 20 8.5)" fill={p.k} />
-        <circle cx={16} cy={10.5} r={2.4} fill={p.k} />
+        <path d="M16 11L9.5 5.5L10.5 12.5Z" fill={p.k} stroke={p.k} strokeWidth={2.5} strokeLinejoin="round" />
+        <path d="M16 11L22.5 5.5L21.5 12.5Z" fill={p.k} stroke={p.k} strokeWidth={2.5} strokeLinejoin="round" />
+        <circle cx={16} cy={11} r={2.2} fill={p.k} />
       </Around>
     </>
   );
@@ -530,7 +530,7 @@ function Envuelto({ p, on }: MP) {
           height={b.h}
           rx={b.w / 2}
           fill={b.i === 0 ? p.co : p.k}
-          opacity={b.c > 0 ? undefined : 0.18}
+          opacity={b.c > 0 ? Math.min(1, b.c / 0.3) : 0.16 * Math.min(1, -b.c / 0.3)}
         />
       ))}
     </>
@@ -634,57 +634,60 @@ function Reloj({ p, on }: MP) {
 
 /* ───────────────────────── Con carácter ───────────────────────── */
 
+const HEART =
+  "M16 28C14 26.3 2 19.5 2 11C2 6.6 5.2 3.5 9.2 3.5C12.2 3.5 14.6 5.4 16 8C17.4 5.4 19.8 3.5 22.8 3.5C26.8 3.5 30 6.6 30 11C30 19.5 18 26.3 16 28Z";
+
 function Latido({ p, on }: MP) {
-  // [top, height] of five strips that trace a heart
+  const id = `h${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
+  const D = 2.6;
+  const T = [0, 0.1, 0.22, 0.34, 0.46, 0.6, 1];
   const S = [
-    [5, 12],
-    [4, 19],
-    [11, 18],
-    [4, 19],
-    [5, 12],
+    [30, 18, 24, 14, 22, 30, 30],
+    [30, 12, 26, 20, 16, 30, 30],
+    [30, 22, 14, 26, 12, 30, 30],
+    [30, 16, 22, 12, 24, 30, 30],
+    [30, 20, 12, 24, 18, 30, 30],
   ];
-  const D = 1.3;
+  const strips = (fill: string, opacity?: number, animate = false) =>
+    S.map((hs, i) => (
+      <Bar key={i} x={2 + i * 6} w={4} at={30} h={30} fill={fill} opacity={opacity} on={animate && on} hs={{ v: hs, t: T }} dur={D} begin={i * 0.03} />
+    ));
   return (
-    <Around
-      cx={16}
-      cy={17}
-      anim={on && <AT type="scale" tr={keys([[0, "1"], [0.12, "1.09"], [0.24, "1"], [0.34, "1.05"], [0.48, "1"], [1, "1"]])} dur={D} />}
-    >
-      {S.map(([y, h], i) => {
-        const lag = Math.abs(i - 2) * 0.035;
-        return (
-          <Bar
-            key={i}
-            x={2 + i * 6}
-            w={4}
-            at={y + h / 2}
-            align="center"
-            h={h}
-            fill={p.co}
-            on={on}
-            hs={keys([[0, h], [0.08 + lag, h * 1.12], [0.2 + lag, h], [0.3 + lag, h * 1.06], [0.44 + lag, h], [1, h]])}
-            dur={D}
-          />
-        );
-      })}
-    </Around>
+    <>
+      <defs>
+        <clipPath id={id}>
+          <path d={HEART} />
+        </clipPath>
+      </defs>
+      <Around
+        cx={16}
+        cy={16}
+        anim={on && <AT type="scale" tr={keys([[0, "1"], [0.64, "1"], [0.7, "1.1"], [0.76, "1"], [0.82, "1.06"], [0.9, "1"], [1, "1"]])} dur={D} />}
+      >
+        <g clipPath={`url(#${id})`}>
+          {on && strips(p.co, 0.22)}
+          {strips(p.co, undefined, true)}
+        </g>
+      </Around>
+    </>
   );
 }
 
 function Cantante({ p, on }: MP) {
+  // the mouth is four dashes whose centres sit on a smile; singing stretches them
   const mouth = [
-    [6, 9, 4, 8, 6],
-    [11, 13, 6, 12, 11],
-    [11, 12, 7, 13, 11],
-    [6, 8, 4, 9, 6],
+    { cy: 18, hs: [7, 10, 6, 11, 7] },
+    { cy: 21.5, hs: [8, 12, 7, 13, 8] },
+    { cy: 21.5, hs: [8, 11, 8, 13, 8] },
+    { cy: 18, hs: [7, 11, 6, 9, 7] },
   ];
   return (
     <>
       {[8, 20].map((x) => (
-        <Bar key={x} x={x} w={4} at={7.5} align="center" h={7} fill={p.k} on={on} hs={keys([[0, 7], [0.9, 7], [0.93, 1], [0.96, 7], [1, 7]])} dur={3.4} />
+        <Bar key={x} x={x} w={4} at={8.5} align="center" h={8} fill={p.k} on={on} hs={keys([[0, 8], [0.9, 8], [0.93, 1.5], [0.96, 8], [1, 8]])} dur={3.4} />
       ))}
-      {mouth.map((hs, i) => (
-        <Bar key={i} x={5 + i * 6} w={4} at={15} align="top" h={hs[0]} fill={p.co} on={on} hs={even(hs)} dur={1.5} begin={i * 0.06} />
+      {mouth.map((m, i) => (
+        <Bar key={i} x={5 + i * 6} w={4} at={m.cy} align="center" h={m.hs[0]} fill={p.co} on={on} hs={even(m.hs)} dur={1.5} begin={i * 0.06} />
       ))}
     </>
   );
@@ -831,13 +834,13 @@ const RAW: Omit<LogoDef, "n" | "id">[] = [
   {
     name: "Latido",
     family: "Con carácter",
-    concept: "Un corazón cortado en cinco barras que late de dentro hacia fuera: tus canciones de siempre.",
+    concept: "Un corazón que se llena como un ecualizador y, cuando está lleno, late. Tus canciones de siempre.",
     Mark: Latido,
   },
   {
     name: "Cantante",
     family: "Con carácter",
-    concept: "Una carita: los ojos son barras y la boca es un ecualizador que canta. De vez en cuando parpadea.",
+    concept: "Una carita: los ojos son barras y la sonrisa es un ecualizador que canta. De vez en cuando parpadea.",
     Mark: Cantante,
   },
   {
