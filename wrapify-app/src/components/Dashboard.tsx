@@ -161,12 +161,12 @@ function RankingList({
   onTopNChange: (n: number) => void;
 }) {
   return (
-    <div className={`${CARD} p-5 flex flex-col`}>
+    <div className={`${CARD} p-5 flex h-full min-h-0 flex-col overflow-hidden`}>
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-zinc-100">{title}</h3>
         <TopNInput value={topN} onChange={onTopNChange} />
       </div>
-      <ol className="space-y-1 overflow-y-auto flex-1" style={{ maxHeight: 360 }}>
+      <ol className="space-y-1 overflow-y-auto flex-1 min-h-0">
         {items.map((item, i) => (
           <li key={item.name} className="flex items-center justify-between gap-3 rounded-xl px-2 py-1.5 hover:bg-white/[0.03] transition-colors">
             <span className="flex items-center gap-2.5 min-w-0">
@@ -422,7 +422,7 @@ function TimelineCard({ data }: { data: SpotifyStream[] }) {
   }, [allDates]);
 
   return (
-    <div className={`${CARD} p-5`}>
+    <div className={`${CARD} p-5 h-full flex flex-col`}>
       {/* Header with tabs */}
       <div className="mb-5 flex items-center justify-between">
         <h3 className="text-sm font-bold text-white">Timeline</h3>
@@ -703,79 +703,65 @@ export default function Dashboard({ data }: DashboardProps) {
     <div className="space-y-4">
 
       {/* ── Overview stats — Bento Grid ── */}
-      <div className="grid grid-cols-12 auto-rows-[100px] gap-4">
-        <div className="col-span-4 row-span-3 flex flex-col gap-4">
-          <StatCard label="Total Streams" value={stats.totalStreams} accent big className="flex-1" />
-          {topSongsDayList.length > 0 && (
-            <div
-              className={`rounded-3xl bg-emerald-950 p-5 flex flex-col cursor-pointer transition-all ${
-                topSongDayOpen ? "" : "flex-1"
-              }`}
-              onClick={() => setTopSongDayOpen((o) => !o)}
-            >
-              <div className="flex items-center justify-between">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-400/80">
-                  Top canción en un solo día
-                </p>
-                <span className={`text-emerald-400/60 text-xs transition-transform ${topSongDayOpen ? "rotate-180" : ""}`}>
-                  ▼
-                </span>
-              </div>
-              <div className="mt-auto">
-                <p className="text-lg font-black tracking-tight text-emerald-300 truncate">
-                  {topSongsDayList[0].track}
-                </p>
-                <p className="mt-0.5 text-xs text-emerald-400/50">
-                  {topSongsDayList[0].count} streams · {topSongsDayList[0].artist} · {formatDateEs(topSongsDayList[0].date)}
-                </p>
-              </div>
-              {topSongDayOpen && (
-                <div className="mt-3 space-y-1.5 border-t border-emerald-400/10 pt-3">
-                  {topSongsDayList.slice(1).map((s, i) => (
-                    <div key={i} className="flex items-baseline gap-2">
-                      <span className="text-[11px] font-bold text-emerald-400/40 w-4 shrink-0">{i + 2}</span>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-emerald-300/90 truncate">{s.track}</p>
-                        <p className="text-[10px] text-emerald-400/40 truncate">
-                          {s.count} streams · {s.artist} · {formatDateEs(s.date)}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+      <div className="grid grid-cols-12 auto-rows-[96px] grid-flow-dense gap-4">
+        <StatCard label="Total Streams" value={stats.totalStreams} accent big className="col-span-3 row-span-2" />
+        {topSongsDayList.length > 0 && (
+          <div
+            className="col-span-3 row-span-2 rounded-3xl bg-emerald-950 p-5 flex flex-col overflow-hidden cursor-pointer transition-all"
+            onClick={() => setTopSongDayOpen((o) => !o)}
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-400/80">
+                Top canción en un solo día
+              </p>
+              <span className={`text-emerald-400/60 text-xs transition-transform ${topSongDayOpen ? "rotate-180" : ""}`}>
+                ▼
+              </span>
             </div>
-          )}
-        </div>
-        <div className="col-span-4 row-span-1">
-          <StatCard label="Horas escuchadas" value={stats.totalHours} className="h-full" />
-        </div>
-        <div className="col-span-4 row-span-1">
-          <StatCard label="Artistas únicos" value={stats.uniqueArtists} className="h-full" />
-        </div>
-        <div className="col-span-4 row-span-1">
-          <StatCard label="Minutos totales" value={stats.totalMinutes} className="h-full" />
-        </div>
-        <div className="col-span-4 row-span-1">
-          <StatCard label="Canciones únicas" value={stats.uniqueTracks} className="h-full" />
-        </div>
-        <div className="col-span-8 row-span-1">
-          <StatCard
-            label="Día más escuchado"
-            value={formatDateEs(busiest.date)}
-            sub={`${busiest.count.toLocaleString()} streams`}
-            accent
-            className="h-full"
-          />
-        </div>
+            <div className={topSongDayOpen ? "mt-2" : "mt-auto"}>
+              <p className="text-lg font-black tracking-tight text-emerald-300 truncate">
+                {topSongsDayList[0].track}
+              </p>
+              <p className="mt-0.5 text-xs text-emerald-400/50">
+                {topSongsDayList[0].count} streams · {topSongsDayList[0].artist} · {formatDateEs(topSongsDayList[0].date)}
+              </p>
+            </div>
+            {topSongDayOpen && (
+              <div className="mt-3 flex-1 min-h-0 overflow-y-auto space-y-1.5 border-t border-emerald-400/10 pt-3 pr-1">
+                {topSongsDayList.slice(1).map((s, i) => (
+                  <div key={i} className="flex items-baseline gap-2">
+                    <span className="text-[11px] font-bold text-emerald-400/40 w-4 shrink-0">{i + 2}</span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-emerald-300/90 truncate">{s.track}</p>
+                      <p className="text-[10px] text-emerald-400/40 truncate">
+                        {s.count} streams · {s.artist} · {formatDateEs(s.date)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+        <StatCard label="Horas escuchadas" value={stats.totalHours} className="col-span-2 row-span-1" />
+        <StatCard label="Artistas únicos" value={stats.uniqueArtists} className="col-span-2 row-span-1" />
+        <StatCard label="Minutos totales" value={stats.totalMinutes} className="col-span-2 row-span-1" />
+        <StatCard label="Canciones únicas" value={stats.uniqueTracks} className="col-span-2 row-span-1" />
+        <StatCard
+          label="Día con más escuchas"
+          value={formatDateEs(busiest.date)}
+          sub={`${busiest.count.toLocaleString()} streams`}
+          accent
+          className="col-span-4 row-span-1"
+        />
       </div>
 
       {/* ── Timeline + Yearly trend ── */}
-      <div className="grid grid-cols-12 gap-4">
+      <div className="grid grid-cols-12 items-stretch gap-4">
       <div className="col-span-7">
         <TimelineCard data={data} />
       </div>
-      <div className={`col-span-5 ${CARD} p-4 flex flex-col`}>
+      <div className={`col-span-5 ${CARD} p-4 flex min-h-[420px] flex-col`}>
         <PlotlyChart
           data={[
             {
@@ -789,7 +775,6 @@ export default function Dashboard({ data }: DashboardProps) {
             },
           ]}
           layout={chartLayout("Streams por Año", {
-            height: 380,
             margin: { t: 40, b: 50, l: 45, r: 10 },
           })}
           config={chartConfig}
@@ -801,17 +786,17 @@ export default function Dashboard({ data }: DashboardProps) {
       {/* ── Rankings ── */}
       <div>
         <SectionLabel>Rankings</SectionLabel>
-        <div className="grid grid-cols-12 gap-4">
-          <div className="col-span-3">
+        <div className="grid grid-cols-12 auto-rows-[96px] grid-flow-dense gap-4">
+          <div className="col-span-3 row-span-5">
             <RankingList title="Canciones" items={songs} topN={topNSongs} onTopNChange={setTopNSongs} />
           </div>
-          <div className="col-span-3">
+          <div className="col-span-3 row-span-5">
             <RankingList title="Artistas" items={artists} topN={topNArtists} onTopNChange={setTopNArtists} />
           </div>
-          <div className="col-span-3">
+          <div className="col-span-3 row-span-5">
             <RankingList title="Álbumes" items={albums} topN={topNAlbums} onTopNChange={setTopNAlbums} />
           </div>
-          <div className="col-span-3">
+          <div className="col-span-3 row-span-5">
             <RankingList title="Artistas (canciones únicas)" items={uniqueTrackArtists} topN={topNUnique} onTopNChange={setTopNUnique} />
           </div>
         </div>
@@ -820,10 +805,10 @@ export default function Dashboard({ data }: DashboardProps) {
       {/* ── Explore: Top by year + Top by artist ── */}
       <div>
         <SectionLabel>Explorar</SectionLabel>
-        <div className="grid grid-cols-12 gap-4">
+        <div className="grid grid-cols-12 auto-rows-[96px] grid-flow-dense gap-4">
 
       {/* Top songs by year */}
-      <div className={`col-span-6 ${CARD} p-5`}>
+      <div className={`col-span-6 row-span-5 ${CARD} p-5 flex min-h-0 flex-col overflow-hidden`}>
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-zinc-100">Top canciones por año</h3>
           <TopNInput value={topNYearSongs} onChange={setTopNYearSongs} />
@@ -844,7 +829,7 @@ export default function Dashboard({ data }: DashboardProps) {
           ))}
         </div>
         {activeYear && (
-          <ol className="space-y-1.5 overflow-y-auto" style={{ maxHeight: 320 }}>
+          <ol className="space-y-1.5 overflow-y-auto flex-1 min-h-0">
             {activeYearSongs.map((item, i) => (
               <li key={item.name} className="flex items-center justify-between gap-3">
                 <span className="flex items-center gap-2.5 min-w-0">
@@ -861,7 +846,7 @@ export default function Dashboard({ data }: DashboardProps) {
       </div>
 
       {/* Top songs by artist */}
-      <div className={`col-span-6 ${CARD} p-5`}>
+      <div className={`col-span-6 row-span-5 ${CARD} p-5 flex min-h-0 flex-col overflow-hidden`}>
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-zinc-100">Canciones más escuchadas de un artista</h3>
           {artistForSongs && <TopNInput value={topNArtistSongs} onChange={setTopNArtistSongs} />}
@@ -890,7 +875,7 @@ export default function Dashboard({ data }: DashboardProps) {
                 x
               </button>
             </div>
-            <ol className="space-y-1.5 overflow-y-auto" style={{ maxHeight: 320 }}>
+            <ol className="space-y-1.5 overflow-y-auto flex-1 min-h-0">
               {artistSongsResult.map((item, i) => (
                 <li key={item.name} className="flex items-center justify-between gap-3">
                   <span className="flex items-center gap-2.5 min-w-0">
@@ -912,10 +897,10 @@ export default function Dashboard({ data }: DashboardProps) {
       {/* ── Comparisons ── */}
       <div>
         <SectionLabel>Comparar</SectionLabel>
-        <div className="grid grid-cols-12 gap-4">
+        <div className="grid grid-cols-12 auto-rows-[96px] grid-flow-dense gap-4">
 
       {/* Artist comparison */}
-      <div className={`col-span-6 ${CARD} p-5`}>
+      <div className={`col-span-6 ${compareArtists.length > 0 ? "row-span-5" : "row-span-2"} ${CARD} p-5 flex min-h-0 flex-col overflow-hidden`}>
         <h3 className="mb-3 text-sm font-bold text-white">Comparar artistas</h3>
         <div className="mb-3 max-w-sm">
           <Autocomplete
@@ -926,7 +911,7 @@ export default function Dashboard({ data }: DashboardProps) {
         </div>
         <TagList tags={compareArtists} onRemove={(tag) => setCompareArtists((prev) => prev.filter((a) => a !== tag))} />
         {artistTrends.length > 0 && (
-          <div className="mt-3">
+          <div className="mt-3 flex flex-1 min-h-0 flex-col">
             <PlotlyChart
               data={artistTrends.map((t, i) => {
                 const color = COMPARE_COLORS[i % COMPARE_COLORS.length];
@@ -955,7 +940,7 @@ export default function Dashboard({ data }: DashboardProps) {
       </div>
 
       {/* Song comparison */}
-      <div className={`col-span-6 ${CARD} p-5`}>
+      <div className={`col-span-6 ${compareSongs.length > 0 ? "row-span-5" : "row-span-2"} ${CARD} p-5 flex min-h-0 flex-col overflow-hidden`}>
         <h3 className="mb-3 text-sm font-semibold text-zinc-100">Comparar canciones</h3>
         <div className="mb-3 max-w-sm">
           <Autocomplete
@@ -982,7 +967,7 @@ export default function Dashboard({ data }: DashboardProps) {
           }}
         />
         {songTrends.length > 0 && (
-          <div className="mt-3">
+          <div className="mt-3 flex flex-1 min-h-0 flex-col">
             <PlotlyChart
               data={songTrends.map((t, i) => {
                 const color = COMPARE_COLORS[i % COMPARE_COLORS.length];
@@ -1016,10 +1001,10 @@ export default function Dashboard({ data }: DashboardProps) {
       {/* ── Trends ── */}
       <div>
         <SectionLabel>Tendencias</SectionLabel>
-        <div className="grid grid-cols-12 gap-4">
+        <div className="grid grid-cols-12 auto-rows-[96px] grid-flow-dense gap-4">
 
       {/* Monthly Trend — full width */}
-      <div className={`col-span-12 ${CARD} p-4`}>
+      <div className={`col-span-12 row-span-3 ${CARD} p-4 flex min-h-0 flex-col`}>
         <PlotlyChart
           data={[
             {
@@ -1036,7 +1021,7 @@ export default function Dashboard({ data }: DashboardProps) {
       </div>
 
       {/* Hourly Polar | Weekday | Monthly Average */}
-      <div className={`col-span-5 ${CARD} p-4`}>
+      <div className={`col-span-4 row-span-4 ${CARD} p-4 flex min-h-0 flex-col`}>
         <PlotlyChart
           data={[
             {
@@ -1063,7 +1048,7 @@ export default function Dashboard({ data }: DashboardProps) {
           style={{ width: "100%" }}
         />
       </div>
-      <div className={`col-span-4 ${CARD} p-4`}>
+      <div className={`col-span-4 row-span-4 ${CARD} p-4 flex min-h-0 flex-col`}>
         <PlotlyChart
           data={[
             {
@@ -1078,7 +1063,7 @@ export default function Dashboard({ data }: DashboardProps) {
           style={{ width: "100%" }}
         />
       </div>
-      <div className={`col-span-4 ${CARD} p-4`}>
+      <div className={`col-span-4 row-span-4 ${CARD} p-4 flex min-h-0 flex-col`}>
         <PlotlyChart
           data={[
             {
@@ -1095,7 +1080,7 @@ export default function Dashboard({ data }: DashboardProps) {
       </div>
 
       {/* Heatmap: Day x Hour */}
-      <div className={`col-span-12 ${CARD} p-4`}>
+      <div className={`col-span-12 row-span-4 ${CARD} p-4 flex min-h-0 flex-col`}>
         <div className="mb-2 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-zinc-100">Actividad por Día y Hora</h3>
           <div className="flex items-center rounded-xl bg-zinc-800/60 p-0.5">
@@ -1258,20 +1243,12 @@ export default function Dashboard({ data }: DashboardProps) {
       {/* ── Skip analysis ── */}
       <div>
         <SectionLabel>Skips</SectionLabel>
-        <div className="grid grid-cols-12 gap-4">
-          {/* Skip stat cards — bento sub-grid */}
-          <div className="col-span-5 grid grid-cols-2 auto-rows-[90px] gap-4">
-            <div className="col-span-1 row-span-2">
-              <StatCard label="Canciones skipeadas" value={`${skips.skipPercent}%`} sub={`${skips.totalSkips.toLocaleString()} skips totales`} accent className="h-full" />
-            </div>
-            <div className="col-span-1">
-              <StatCard label="Tiempo medio antes de skip" value={`${skips.avgSecondsBeforeSkip}s`} sub="segundos de media" className="h-full" />
-            </div>
-            <div className="col-span-1">
-              <StatCard label="Completadas" value={`${(100 - skips.skipPercent).toFixed(1)}%`} sub="hasta el final" className="h-full" />
-            </div>
-          </div>
-          <div className={`col-span-7 ${CARD} p-4`}>
+        <div className="grid grid-cols-12 auto-rows-[96px] grid-flow-dense gap-4">
+          {/* Skip stat cards */}
+          <StatCard label="Canciones skipeadas" value={`${skips.skipPercent}%`} sub={`${skips.totalSkips.toLocaleString()} skips totales`} accent className="col-span-3 row-span-2" />
+          <StatCard label="Tiempo medio antes de skip" value={`${skips.avgSecondsBeforeSkip}s`} sub="segundos de media" className="col-span-2 row-span-1" />
+          <StatCard label="Completadas" value={`${(100 - skips.skipPercent).toFixed(1)}%`} sub="hasta el final" className="col-span-2 row-span-1" />
+          <div className={`col-span-7 row-span-4 ${CARD} p-4 flex min-h-0 flex-col`}>
             <PlotlyChart
               data={[
                 {
@@ -1301,7 +1278,7 @@ export default function Dashboard({ data }: DashboardProps) {
             />
           </div>
 
-          <div className={`col-span-8 ${CARD} p-4`}>
+          <div className={`col-span-6 row-span-3 ${CARD} p-4 flex min-h-0 flex-col`}>
             <PlotlyChart
               data={[
                 {
@@ -1325,14 +1302,14 @@ export default function Dashboard({ data }: DashboardProps) {
               style={{ width: "100%" }}
             />
           </div>
-          <div className={`col-span-4 ${CARD} p-5 flex flex-col justify-center items-center`}>
+          <div className={`col-span-5 row-span-2 ${CARD} p-5 flex flex-col justify-center items-center`}>
             <p className="text-6xl font-black text-amber-400">{skips.skipRateByHour.indexOf(Math.max(...skips.skipRateByHour))}h</p>
             <p className="mt-2 text-xs font-bold uppercase tracking-wider text-zinc-500">Hora con más skips</p>
             <p className="text-sm text-zinc-600">{Math.max(...skips.skipRateByHour)}% skip rate</p>
           </div>
 
           {/* Skip rate by hour */}
-          <div className={`col-span-12 ${CARD} p-4`}>
+          <div className={`col-span-6 row-span-3 ${CARD} p-4 flex min-h-0 flex-col`}>
             <PlotlyChart
               data={[
                 {
@@ -1355,7 +1332,7 @@ export default function Dashboard({ data }: DashboardProps) {
           </div>
 
           {/* Most skipped songs + artists */}
-          <div className={`col-span-6 ${CARD} p-4`}>
+          <div className={`col-span-6 row-span-5 ${CARD} p-4 flex min-h-0 flex-col`}>
             <PlotlyChart
               data={[
                 {
@@ -1376,7 +1353,7 @@ export default function Dashboard({ data }: DashboardProps) {
               style={{ width: "100%" }}
             />
           </div>
-          <div className={`col-span-6 ${CARD} p-4`}>
+          <div className={`col-span-6 row-span-5 ${CARD} p-4 flex min-h-0 flex-col`}>
             <PlotlyChart
               data={[
                 {
@@ -1412,10 +1389,10 @@ export default function Dashboard({ data }: DashboardProps) {
       {/* ── Scatter / Quadrant charts ── */}
       <div>
         <SectionLabel>Radiografía</SectionLabel>
-        <div className="grid grid-cols-12 gap-4">
+        <div className="grid grid-cols-12 auto-rows-[96px] grid-flow-dense gap-4">
 
           {/* 1 — Popularidad vs Skip Rate (canciones) */}
-          <div className={`col-span-6 ${CARD} p-4`}>
+          <div className={`col-span-6 row-span-5 ${CARD} p-4 flex min-h-0 flex-col`}>
             <PlotlyChart
               data={(() => {
                 const pts = scatterPlaysSkip;
@@ -1488,7 +1465,7 @@ export default function Dashboard({ data }: DashboardProps) {
           </div>
 
           {/* 2 — Reproducciones vs Diversidad (artistas) */}
-          <div className={`col-span-6 ${CARD} p-4`}>
+          <div className={`col-span-6 row-span-5 ${CARD} p-4 flex min-h-0 flex-col`}>
             <PlotlyChart
               data={(() => {
                 const pts = scatterPlaysTracks;
@@ -1561,7 +1538,7 @@ export default function Dashboard({ data }: DashboardProps) {
           </div>
 
           {/* 3 — Popularidad vs Duración media (artistas) */}
-          <div className={`col-span-6 ${CARD} p-4`}>
+          <div className={`col-span-6 row-span-5 ${CARD} p-4 flex min-h-0 flex-col`}>
             <PlotlyChart
               data={(() => {
                 const pts = scatterPlaysDuration;
@@ -1634,7 +1611,7 @@ export default function Dashboard({ data }: DashboardProps) {
           </div>
 
           {/* 4 — Antigüedad vs Vigencia (artistas) */}
-          <div className={`col-span-6 ${CARD} p-4`}>
+          <div className={`col-span-6 row-span-5 ${CARD} p-4 flex min-h-0 flex-col`}>
             <PlotlyChart
               data={(() => {
                 const pts = scatterAgeRecent;
@@ -1722,10 +1699,10 @@ export default function Dashboard({ data }: DashboardProps) {
       {/* ── Insights avanzados ── */}
       <div>
         <SectionLabel>Insights</SectionLabel>
-        <div className="grid grid-cols-12 gap-4">
+        <div className="grid grid-cols-12 auto-rows-[96px] grid-flow-dense gap-4">
 
           {/* Lorenz curve */}
-          <div className={`col-span-6 ${CARD} p-4`}>
+          <div className={`col-span-6 row-span-5 ${CARD} p-4 flex min-h-0 flex-col`}>
             <PlotlyChart
               data={[
                 {
@@ -1763,7 +1740,7 @@ export default function Dashboard({ data }: DashboardProps) {
           </div>
 
           {/* Discovery rate */}
-          <div className={`col-span-6 ${CARD} p-4`}>
+          <div className={`col-span-6 row-span-5 ${CARD} p-4 flex min-h-0 flex-col`}>
             <PlotlyChart
               data={[
                 {
@@ -1801,7 +1778,7 @@ export default function Dashboard({ data }: DashboardProps) {
           </div>
 
           {/* Seasonal artists heatmap */}
-          <div className={`col-span-12 ${CARD} p-4`}>
+          <div className={`col-span-12 row-span-6 ${CARD} p-4 flex min-h-0 flex-col`}>
             <PlotlyChart
               data={[
                 {
@@ -1826,18 +1803,16 @@ export default function Dashboard({ data }: DashboardProps) {
           </div>
 
           {/* Sessions */}
-          <div className="col-span-4 grid grid-cols-1 auto-rows-[90px] gap-4">
-            <StatCard label="Sesiones detectadas" value={sessions.sessions.length.toLocaleString()} className="h-full" />
-            <StatCard label="Duración media" value={`${sessions.avgDuration} min`} className="h-full" />
-            <StatCard
-              label="Sesión más larga"
-              value={sessions.longestSession ? `${Math.round(sessions.longestSession.durationMin / 60)}h ${sessions.longestSession.durationMin % 60}m` : "—"}
-              sub={sessions.longestSession ? `${sessions.longestSession.trackCount} canciones · ${sessions.longestSession.date}` : ""}
-              accent
-              className="h-full"
-            />
-          </div>
-          <div className={`col-span-8 ${CARD} p-4`}>
+          <StatCard label="Sesiones detectadas" value={sessions.sessions.length.toLocaleString()} className="col-span-2 row-span-1" />
+          <StatCard label="Duración media" value={`${sessions.avgDuration} min`} className="col-span-2 row-span-1" />
+          <StatCard
+            label="Sesión más larga"
+            value={sessions.longestSession ? `${Math.round(sessions.longestSession.durationMin / 60)}h ${sessions.longestSession.durationMin % 60}m` : "—"}
+            sub={sessions.longestSession ? `${sessions.longestSession.trackCount} canciones · ${sessions.longestSession.date}` : ""}
+            accent
+            className="col-span-4 row-span-2"
+          />
+          <div className={`col-span-8 row-span-3 ${CARD} p-4 flex min-h-0 flex-col`}>
             <PlotlyChart
               data={[
                 {
@@ -1861,13 +1836,13 @@ export default function Dashboard({ data }: DashboardProps) {
           </div>
 
           {/* One-hit wonders */}
-          <div className={`col-span-6 ${CARD} p-5`}>
+          <div className={`col-span-6 row-span-5 ${CARD} p-5 flex min-h-0 flex-col overflow-hidden`}>
             <h3 className="mb-3 text-sm font-bold text-white">One-Hit Wonders personales</h3>
             <p className="mb-3 text-[11px] text-zinc-500">Artistas donde 60%+ de tus plays son de una sola canción, mínimo 50 plays</p>
             {oneHits.length === 0 ? (
               <p className="text-sm text-zinc-600">No se encontraron one-hit wonders.</p>
             ) : (
-              <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
+              <div className="space-y-2 flex-1 min-h-0 overflow-y-auto pr-1">
                 {oneHits.map((item, i) => (
                   <div key={item.artist} className="flex items-center gap-3 rounded-xl px-2 py-1.5 hover:bg-white/[0.03] transition-colors">
                     <span className="w-5 text-right text-xs font-bold text-zinc-600">{i + 1}</span>
@@ -1888,13 +1863,13 @@ export default function Dashboard({ data }: DashboardProps) {
           </div>
 
           {/* Binge detector */}
-          <div className={`col-span-6 ${CARD} p-5`}>
+          <div className={`col-span-6 row-span-5 ${CARD} p-5 flex min-h-0 flex-col overflow-hidden`}>
             <h3 className="mb-3 text-sm font-bold text-white">Binge Days</h3>
             <p className="mb-3 text-[11px] text-zinc-500">Días donde un artista fue 70%+ de tus escuchas, mínimo 5 plays</p>
             {binges.length === 0 ? (
               <p className="text-sm text-zinc-600">No se encontraron binge days.</p>
             ) : (
-              <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
+              <div className="space-y-2 flex-1 min-h-0 overflow-y-auto pr-1">
                 {binges.map((item, i) => (
                   <div key={`${item.date}-${item.artist}`} className="flex items-center gap-3 rounded-xl px-2 py-1.5 hover:bg-white/[0.03] transition-colors">
                     <span className="w-5 text-right text-xs font-bold text-zinc-600">{i + 1}</span>
@@ -1912,7 +1887,7 @@ export default function Dashboard({ data }: DashboardProps) {
           </div>
 
           {/* Platform trends */}
-          <div className={`col-span-8 ${CARD} p-4`}>
+          <div className={`col-span-8 row-span-4 ${CARD} p-4 flex min-h-0 flex-col`}>
             <PlotlyChart
               data={platTrends.platforms.map((p, i) => ({
                 type: "scatter" as const,
@@ -1938,7 +1913,7 @@ export default function Dashboard({ data }: DashboardProps) {
           </div>
 
           {/* Offline trend */}
-          <div className={`col-span-4 ${CARD} p-4`}>
+          <div className={`col-span-4 row-span-4 ${CARD} p-4 flex min-h-0 flex-col`}>
             <PlotlyChart
               data={[
                 {
@@ -1965,23 +1940,15 @@ export default function Dashboard({ data }: DashboardProps) {
           </div>
 
           {/* Listening streaks */}
-          <div className="col-span-4 grid grid-cols-2 auto-rows-[90px] gap-4">
-            <div className="col-span-1">
-              <StatCard label="Racha actual" value={`${streaks.currentStreak} días`} className="h-full" />
-            </div>
-            <div className="col-span-1">
-              <StatCard label="Racha más larga" value={`${streaks.longestStreak} días`} accent className="h-full" />
-            </div>
-            <div className="col-span-2">
-              <StatCard
-                label="Mejor racha"
-                value={`${streaks.longestStart} → ${streaks.longestEnd}`}
-                sub={`${streaks.longestStreak} días consecutivos`}
-                className="h-full"
-              />
-            </div>
-          </div>
-          <div className={`col-span-8 ${CARD} p-4`}>
+          <StatCard label="Racha actual" value={`${streaks.currentStreak} días`} className="col-span-2 row-span-1" />
+          <StatCard label="Racha más larga" value={`${streaks.longestStreak} días`} accent className="col-span-2 row-span-1" />
+          <StatCard
+            label="Mejor racha"
+            value={`${streaks.longestStart} → ${streaks.longestEnd}`}
+            sub={`${streaks.longestStreak} días consecutivos`}
+            className="col-span-4 row-span-2"
+          />
+          <div className={`col-span-8 row-span-3 ${CARD} p-4 flex min-h-0 flex-col`}>
             <PlotlyChart
               data={[
                 {
@@ -2002,13 +1969,13 @@ export default function Dashboard({ data }: DashboardProps) {
           </div>
 
           {/* Comeback songs */}
-          <div className={`col-span-12 ${CARD} p-5`}>
+          <div className={`col-span-12 row-span-4 ${CARD} p-5 flex min-h-0 flex-col overflow-hidden`}>
             <h3 className="mb-1 text-sm font-bold text-white">Comeback Songs</h3>
             <p className="mb-3 text-[11px] text-zinc-500">Canciones que dejaste de escuchar 2+ meses y luego volvieron</p>
             {comebacks.length === 0 ? (
               <p className="text-sm text-zinc-600">No se detectaron comebacks.</p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 content-start flex-1 min-h-0 overflow-y-auto pr-1">
                 {comebacks.map((item, i) => (
                   <div key={item.name} className="flex items-center gap-3 rounded-xl bg-white/[0.03] px-3 py-2.5 hover:bg-white/[0.06] transition-colors">
                     <span className="text-xs font-bold text-zinc-600 w-5 text-right">{i + 1}</span>
@@ -2030,8 +1997,8 @@ export default function Dashboard({ data }: DashboardProps) {
       {/* ── Geography ── */}
       <div>
         <SectionLabel>Geografía</SectionLabel>
-        <div className="grid grid-cols-12 gap-4">
-          <div className={`col-span-4 ${CARD} p-4`}>
+        <div className="grid grid-cols-12 auto-rows-[96px] grid-flow-dense gap-4">
+          <div className={`col-span-4 row-span-5 ${CARD} p-4 flex min-h-0 flex-col`}>
             <PlotlyChart
               data={[
                 {
@@ -2058,7 +2025,7 @@ export default function Dashboard({ data }: DashboardProps) {
               style={{ width: "100%" }}
             />
           </div>
-          <div className={`col-span-8 ${CARD} p-4`}>
+          <div className={`col-span-8 row-span-5 ${CARD} p-4 flex min-h-0 flex-col`}>
             <PlotlyChart
               data={[
                 {

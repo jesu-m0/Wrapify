@@ -63,7 +63,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-zinc-950 px-6 py-5">
-      <div className="mx-auto max-w-[1800px]">
+      <div className="w-full">
         {/* Header */}
         <div className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-3">

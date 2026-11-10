@@ -28,3 +28,58 @@ Poner enlaces a la wikipedia del artista??
 
 
 - por cada grafica podriamos añadir un pequeño texto de algun modo que explique o ayude al user a interpretar la grafica. o un link a una pagina donde se explique más en detalle o algo.
+
+
+--------------------------------------------------------------------------------
+PROPUESTAS CLAUDE (12 jul 2026) — marcad con [x] las que os gusten y borrad el resto
+
+## Data engineering / calidad de datos
+- [x] BUG zona horaria: el campo "ts" del export viene en UTC y process-data.ts usa
+      getUTCHours(), asi que la actividad por hora sale desplazada 1-2h respecto a
+      España (esto explica el punto "Revisar gráfico de actividad por hora del día").
+      Fix: usar getHours()/getDay() para convertir a hora local.
+- [x] Definir qué cuenta como "reproducción": ahora ms_played > 0, o sea que un skip
+      a los 2 segundos cuenta igual que una escucha entera. Spotify cuenta stream a
+      partir de 30s. Hacerlo configurable (toggle "modo estricto >=30s").
+- [x] Agrupar canciones por spotify_track_uri en vez de por nombre: "Song" y
+      "Song (Remastered 2019)" ahora cuentan como dos canciones distintas.
+- [x] Deduplicar al cargar por (ts, spotify_track_uri, ms_played), por si se suben
+      exports repetidos o solapados.
+- [x] Validar el JSON al subirlo (p.ej. con zod) con mensaje claro si alguien sube el
+      export corto de 1 año en vez del extendido.
+- [x] Hacer el parseo/agregación en un Web Worker y cachear el resultado procesado en
+      IndexedDB -> recargar la página sería instantáneo.
+- [x] Enriquecer con la Web API de Spotify (batch por URIs): géneros del artista,
+      fecha de lanzamiento, duración real del track, carátulas. OJO: el endpoint de
+      audio features (danceability etc.) está deprecado para apps nuevas desde
+      finales de 2024; para géneros finos, alternativa MusicBrainz / everynoise.
+- [x] Tests "golden": un JSON pequeño fijo con resultados esperados para cada función
+      de stats.ts (40+ funciones sin tests = refactors rompen cosas en silencio).
+- [ ] Idea friki diferencial: DuckDB-WASM + pestaña "SQL playground" para que el
+      usuario consulte su propio historial con SQL.
+
+## Gráficas nuevas
+- [x] Cohortes de retención de artistas (heatmap tipo SaaS): de los artistas
+      descubiertos en el año X, qué % sigues escuchando en X+1, X+2... Responde a
+      "¿soy fiel a mis artistas o los quemo?". No necesita API externa.
+- [x] Vida media de una canción: días desde la primera escucha hasta acumular el
+      50% / 90% de sus plays totales. Histograma: ¿quemas canciones en 2 semanas o
+      fuego lento? Combina con los comebacks.
+- [x] Bump chart del top 10 artistas por año: el ranking como carrera, con líneas
+      que se cruzan. Muy visual con 8+ años de datos.
+- [x] Sankey de reason_start -> reason_end: cómo navegas la música (¿dejas sonar
+      trackdone->trackdone o vives del fwdbtn?). Generaliza el análisis de skips.
+- [x] Grafo de artistas que suenan en la misma sesión (las sesiones ya están
+      calculadas): tus "barrios" musicales sin necesitar géneros.
+- [x] Diversidad en el tiempo: entropía de Shannon (o Gini) rolling por mes. La
+      Lorenz es una foto fija; esto responde "¿me estoy volviendo más aburrido?".
+- [x] Ridgeline del reloj de escucha por año: cómo cambió tu horario de escucha
+      con los años (uni -> curro, etc.).
+- [x] Edad musical (necesita API por release dates): distribución de años de
+      lanzamiento de lo que escuchas. ¿Te quedaste anclado en 2016?
+- [ ] Guilty pleasures: canciones con muchas plays y alto % en incognito_mode.
+      Nadie usa esa columna y es la gráfica más divertida de enseñar.
+- [x] Música viajera: cambios de conn_country = viajes detectados. Timeline de qué
+      escuchaste en cada país (convierte la distribución por país en narrativa).
+- [x] Mosaico mes x año con la canción top de cada celda (con carátula si hay API):
+      12 años de himnos mensuales de un vistazo.
