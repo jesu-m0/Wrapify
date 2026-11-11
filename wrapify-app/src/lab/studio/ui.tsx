@@ -30,7 +30,23 @@ export const cssVars = (vars: Record<string, string>) => vars as CSSProperties;
 
 /* ── Icons: flat, single colour, drawn on a 24px grid ── */
 
-export type IconName = "sun" | "moon" | "crown" | "flame" | "trophy" | "headphones" | "search" | "close" | "play" | "pause";
+export type IconName =
+  | "sun"
+  | "moon"
+  | "crown"
+  | "flame"
+  | "trophy"
+  | "headphones"
+  | "search"
+  | "close"
+  | "play"
+  | "pause"
+  | "mail"
+  | "clock"
+  | "folder"
+  | "lock"
+  | "check"
+  | "external";
 
 export const SUN_RAYS = Array.from({ length: 8 }, (_, i) => {
   const a = (i / 8) * Math.PI * 2;
@@ -83,6 +99,27 @@ export const ICONS: Record<IconName, ReactNode> = {
     </>
   ),
   close: <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />,
+  mail: (
+    <g fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="5.5" width="18" height="13" rx="2.4" />
+      <path d="M4.2 7.4l7.8 5.8 7.8-5.8" />
+    </g>
+  ),
+  clock: (
+    <g fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="8.6" />
+      <path d="M12 7.4V12l3.2 2.1" />
+    </g>
+  ),
+  folder: <path d="M3 6.6A1.6 1.6 0 0 1 4.6 5h4.7l2.1 2.3h8a1.6 1.6 0 0 1 1.6 1.6v9.5a1.6 1.6 0 0 1-1.6 1.6H4.6A1.6 1.6 0 0 1 3 18.4z" />,
+  lock: (
+    <>
+      <rect x="5" y="10.4" width="14" height="10.1" rx="2.4" />
+      <path d="M8.2 10.4V8a3.8 3.8 0 0 1 7.6 0v2.4" fill="none" stroke="currentColor" strokeWidth="2.2" />
+    </>
+  ),
+  check: <path d="M5 12.6l4.4 4.4L19 7.4" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />,
+  external: <path d="M8 16l8.5-8.5M9.6 7.5h6.9v6.9" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />,
 };
 
 export function Icon({ name, size = 22 }: { name: IconName; size?: number }) {

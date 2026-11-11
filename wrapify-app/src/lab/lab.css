@@ -1,40 +1,10 @@
 /* ───────────────────────────────────────────────────────────
-   Wrapify lab — shared themes + motion for the /lab/* versions.
+   Wrapify lab — theme + motion for the /lab/* pages.
    Everything is prefixed (lab-, theme-) so it can't leak into
    the main app.
    ─────────────────────────────────────────────────────────── */
 
-/* ── Themes: gate (--g-*) and chart (--ink/--muted/--accent/--line) tokens ── */
-
-.theme-stories {
-  --g-bg: #1a0b2e;
-  --g-ink: #f5f0ff;
-  --g-muted: #b9a8d9;
-  --g-accent: #c6ff3d;
-  --g-accent-ink: #14210a;
-  --g-card: rgba(255, 255, 255, 0.06);
-  --g-border: rgba(255, 255, 255, 0.22);
-  --ink: #f5f0ff;
-  --muted: #b9a8d9;
-  --accent: #c6ff3d;
-  --line: rgba(255, 255, 255, 0.14);
-  font-family: var(--font-bricolage), system-ui, sans-serif;
-}
-
-.theme-revista {
-  --g-bg: #f4efe6;
-  --g-ink: #1b1814;
-  --g-muted: #6f665c;
-  --g-accent: #d9482b;
-  --g-accent-ink: #fffaf2;
-  --g-card: rgba(27, 24, 20, 0.035);
-  --g-border: rgba(27, 24, 20, 0.28);
-  --ink: #1b1814;
-  --muted: #6f665c;
-  --accent: #d9482b;
-  --line: rgba(27, 24, 20, 0.13);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
-}
+/* ── Theme: gate (--g-*) and chart (--ink/--muted/--accent/--line) tokens ── */
 
 /* Studio: flat warm page, colour-block cards. --page/--paper are the neutral
    surfaces; --c-* is the "contrast" card (dark on the light page and vice versa). */
@@ -87,10 +57,6 @@
   --line: rgba(246, 240, 228, 0.13);
 }
 
-.lab-serif {
-  font-family: var(--font-fraunces), Georgia, serif;
-}
-
 /* ── Keyframes ── */
 
 @keyframes lab-rise {
@@ -110,44 +76,16 @@
   60% { opacity: 1; transform: scale(1.04) rotate(0.5deg); }
   100% { opacity: 1; transform: none; }
 }
-@keyframes lab-slide-left {
-  from { opacity: 0; transform: translateX(-48px); }
-  to { opacity: 1; transform: none; }
-}
-@keyframes lab-grow-x {
-  from { transform: scaleX(0); }
-  to { transform: scaleX(1); }
-}
 @keyframes lab-grow-y {
   from { transform: scaleY(0); }
   to { transform: scaleY(1); }
 }
-@keyframes lab-progress {
-  from { width: 0%; }
-  to { width: 100%; }
-}
 @keyframes lab-spin {
   to { transform: rotate(360deg); }
-}
-@keyframes lab-drift {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(6%, -8%) scale(1.12); }
-  66% { transform: translate(-7%, 5%) scale(0.94); }
-}
-@keyframes lab-pulse-ring {
-  0% { transform: scale(0.6); opacity: 0; }
-  30% { opacity: 1; }
-  100% { transform: scale(1.5); opacity: 0; }
-}
-@keyframes lab-marquee {
-  to { transform: translateX(-50%); }
 }
 @keyframes lab-eq {
   0%, 100% { transform: scaleY(0.3); }
   50% { transform: scaleY(1); }
-}
-@keyframes lab-pan {
-  to { background-position: 56px 56px; }
 }
 @keyframes lab-float {
   0%, 100% { transform: translateY(0) rotate(var(--r, 0deg)); }
@@ -173,25 +111,9 @@
 .lab-fade { animation: lab-fade 0.9s ease both; }
 .lab-mask-in { animation: lab-mask-in 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 .lab-pop { animation: lab-pop 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
-.lab-slide-left { animation: lab-slide-left 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
-.lab-grow-x { transform-origin: left center; animation: lab-grow-x 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 .lab-grow-y { transform-origin: center bottom; animation: lab-grow-y 1s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 .lab-spin { animation: lab-spin 14s linear infinite; }
-.lab-spin-slow { animation: lab-spin 60s linear infinite; }
-.lab-drift { animation: lab-drift 22s ease-in-out infinite; }
 .lab-float { animation: lab-float 6s ease-in-out infinite; }
-.lab-progress { animation-name: lab-progress; animation-timing-function: linear; animation-fill-mode: forwards; }
-
-/* scroll reveal */
-.lab-reveal {
-  opacity: 0;
-  transform: translateY(30px);
-  transition: opacity 0.9s cubic-bezier(0.2, 0.7, 0.2, 1), transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
-}
-.lab-reveal.is-in {
-  opacity: 1;
-  transform: none;
-}
 
 /* equalizer mark */
 .lab-eq {
@@ -208,14 +130,6 @@
   transform-origin: center bottom;
   animation: lab-eq 1.1s ease-in-out infinite;
 }
-
-/* marquee */
-.lab-marquee {
-  display: flex;
-  width: max-content;
-  animation: lab-marquee 48s linear infinite;
-}
-.lab-marquee:hover { animation-play-state: paused; }
 
 /* ── Charts ── */
 
@@ -265,41 +179,6 @@
   transform: translate(-50%, calc(-100% - 12px));
 }
 .lab-tip b { font-weight: 700; }
-
-/* ── Stories decorations ── */
-
-.lab-dots {
-  background-image: radial-gradient(currentColor 1.6px, transparent 1.6px);
-  background-size: 28px 28px;
-  animation: lab-pan 6s linear infinite;
-}
-.lab-stripes {
-  background-image: repeating-linear-gradient(-45deg, currentColor 0 14px, transparent 14px 40px);
-  background-size: 56.57px 56.57px;
-  animation: lab-pan 3.5s linear infinite;
-}
-
-/* ── Revista ── */
-
-.lab-paper {
-  background-color: var(--g-bg);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.09 0 0 0 0 0.08 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-.lab-outline {
-  color: transparent;
-  -webkit-text-stroke: 1.2px var(--ink);
-}
-.lab-dropcap::first-letter {
-  float: left;
-  font-family: var(--font-fraunces), Georgia, serif;
-  font-size: 4.6em;
-  line-height: 0.82;
-  padding: 0.06em 0.1em 0 0;
-  color: var(--accent);
-  font-weight: 700;
-}
-.lab-noscroll { scrollbar-width: none; }
-.lab-noscroll::-webkit-scrollbar { display: none; }
 
 /* ── Studio ── */
 
@@ -363,5 +242,4 @@
     transition-duration: 0.01ms !important;
     transition-delay: 0ms !important;
   }
-  .lab-progress { animation-duration: 12s !important; }
 }

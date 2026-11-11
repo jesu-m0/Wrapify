@@ -3,7 +3,6 @@
 import { useDeferredValue, useMemo, useState, useTransition } from "react";
 import { SpotifyStream } from "@/types/spotify";
 import DataGate from "@/lab/DataGate";
-import LabSwitcher from "@/lab/LabSwitcher";
 import { Equalizer } from "@/lab/motion";
 import { setLabData } from "@/lab/store";
 import { generateMonthRange } from "@/lib/stats";
@@ -30,7 +29,7 @@ export default function StudioPage() {
   const [dark, setDark] = useState(false);
   return (
     <div className="theme-studio" data-mode={dark ? "dark" : "light"}>
-      <DataGate tagline="Tu historial, para explorarlo a tu ritmo.">
+      <DataGate dark={dark} toggleDark={() => setDark((d) => !d)}>
         {(data) => <Studio data={data} dark={dark} toggleDark={() => setDark((d) => !d)} />}
       </DataGate>
     </div>
@@ -95,7 +94,6 @@ function Studio({ data, dark, toggleDark }: { data: SpotifyStream[]; dark: boole
           </span>
           <Segmented options={TABS} value={tab} onChange={setTab} thumb={HUES[TAB_HUE[tab]]} onThumb={INK} className="order-3 w-full md:order-none md:w-[440px]" />
           <div className="flex items-center gap-2">
-            <LabSwitcher current="/lab/studio" />
             <button type="button" onClick={() => setLabData(null)} className={`${ghost} px-3 py-2 text-xs font-semibold whitespace-nowrap`} style={{ borderColor: "var(--g-border)" }}>
               Cambiar datos
             </button>

@@ -1,6 +1,6 @@
 "use client";
 
-import { CSSProperties, ReactNode, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { fmtInt } from "./insights";
 
 /** True once the element has scrolled into view (stays true). */
@@ -23,30 +23,6 @@ export function useInView<T extends Element>(rootMargin = "0px 0px -8% 0px") {
     return () => io.disconnect();
   }, [rootMargin]);
   return [ref, inView] as const;
-}
-
-/** Fades + slides its children in when they scroll into view. */
-export function Reveal({
-  children,
-  delay = 0,
-  className = "",
-  style,
-}: {
-  children: ReactNode;
-  delay?: number;
-  className?: string;
-  style?: CSSProperties;
-}) {
-  const [ref, inView] = useInView<HTMLDivElement>();
-  return (
-    <div
-      ref={ref}
-      className={`lab-reveal ${inView ? "is-in" : ""} ${className}`}
-      style={{ transitionDelay: `${delay}ms`, ...style }}
-    >
-      {children}
-    </div>
-  );
 }
 
 /** Number that counts up when it enters the viewport, and glides to new values afterwards. */
