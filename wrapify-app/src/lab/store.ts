@@ -102,6 +102,14 @@ export async function loadDevData(onStatus: (s: string) => void) {
   await finish(raw, onStatus);
 }
 
+/** A made-up listener (src/lib/demo), for whoever wants to look around without their own history. */
+export async function loadDemoData(onStatus: (s: string) => void) {
+  onStatus("Inventando diez años de música…");
+  await new Promise((r) => setTimeout(r, 30));
+  const { generateDemoHistory } = await import("@/lib/demo/generate");
+  await finish(generateDemoHistory(), onStatus);
+}
+
 async function finish(raw: SpotifyStreamRaw[], onStatus: (s: string) => void) {
   onStatus(`Afinando ${raw.length.toLocaleString("de-DE")} reproducciones…`);
   // let the status paint before the synchronous crunch

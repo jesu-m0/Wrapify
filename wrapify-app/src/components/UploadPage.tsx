@@ -66,6 +66,21 @@ export default function UploadPage({ onDataLoaded }: UploadPageProps) {
     }
   };
 
+  const loadDemoData = async () => {
+    setLoading(true);
+    setStatus("Inventando diez años de música...");
+    try {
+      await new Promise((r) => setTimeout(r, 30));
+      const { generateDemoHistory } = await import("@/lib/demo/generate");
+      const processed = processRawStreams(generateDemoHistory());
+      setStatus(null);
+      onDataLoaded(processed);
+    } catch {
+      setStatus("Error al generar los datos de ejemplo");
+      setLoading(false);
+    }
+  };
+
   const onDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
@@ -138,13 +153,24 @@ export default function UploadPage({ onDataLoaded }: UploadPageProps) {
         />
       </div>
 
-      <button
-        onClick={loadDevData}
-        disabled={loading}
-        className="rounded-full border border-zinc-300 px-6 py-2.5 text-sm font-medium transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900 disabled:opacity-50"
-      >
-        Cargar mis datos (dev)
-      </button>
+      <div className="flex flex-wrap justify-center gap-3">
+        <button
+          onClick={loadDemoData}
+          disabled={loading}
+          className="rounded-full border border-zinc-300 px-6 py-2.5 text-sm font-medium transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900 disabled:opacity-50"
+        >
+          Probar con datos de ejemplo
+        </button>
+        {process.env.NODE_ENV !== "production" && (
+          <button
+            onClick={loadDevData}
+            disabled={loading}
+            className="rounded-full border border-zinc-300 px-6 py-2.5 text-sm font-medium transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900 disabled:opacity-50"
+          >
+            Cargar mis datos (dev)
+          </button>
+        )}
+      </div>
 
       {status && (
         <p className="text-sm text-zinc-500 animate-pulse">{status}</p>

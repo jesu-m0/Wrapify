@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { DragEvent, ReactNode, useCallback, useRef, useState } from "react";
 import { SpotifyStream } from "@/types/spotify";
-import { filesFromDrop, loadDevData, loadFromFiles, useLabData } from "./store";
+import { filesFromDrop, loadDemoData, loadDevData, loadFromFiles, useLabData } from "./store";
 import { Equalizer } from "./motion";
 import DownloadGuide from "./studio/DownloadGuide";
 import { HUES, Icon, INK, Mark } from "./studio/ui";
@@ -156,12 +156,22 @@ export default function DataGate({
                         </button>
                         <button
                           type="button"
-                          onClick={() => run(loadDevData)}
+                          onClick={() => run(loadDemoData)}
                           className={`${ghost} px-6 py-3 text-sm font-semibold`}
                           style={{ borderColor: "var(--line)" }}
                         >
-                          Usar mis datos (dev)
+                          Probar con datos de ejemplo
                         </button>
+                        {process.env.NODE_ENV !== "production" && (
+                          <button
+                            type="button"
+                            onClick={() => run(loadDevData)}
+                            className={`${ghost} px-6 py-3 text-sm font-semibold`}
+                            style={{ borderColor: "var(--line)" }}
+                          >
+                            Usar mis datos (dev)
+                          </button>
+                        )}
                       </div>
                       {error && (
                         <p
