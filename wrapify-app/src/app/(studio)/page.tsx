@@ -17,7 +17,7 @@ import Tops from "@/lab/studio/Tops";
 import { Hue, HUES, Icon, INK, Mark, Segmented } from "@/lab/studio/ui";
 
 /*
- * Version C — "Studio".
+ * Studio — the home page (/). Grew up in the lab as "version C".
  * The practical evolution of the current dashboard (four tabs, year chips,
  * an artist drawer you can open from anywhere) as flat colour blocks.
  * Building blocks and colour rules live in src/lab/studio/ui.tsx; the tabs are

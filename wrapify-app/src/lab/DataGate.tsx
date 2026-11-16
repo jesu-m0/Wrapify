@@ -208,9 +208,12 @@ export default function DataGate({
           <DownloadGuide className="min-w-0 xl:col-span-8" delay={2} />
         </div>
 
-        <p className="mt-10 text-sm font-medium" style={{ color: "var(--muted)" }}>
+        <p className="mt-10 flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium" style={{ color: "var(--muted)" }}>
+          <Link href="/classic" className="underline-offset-4 hover:underline">
+            Ver el dashboard clásico
+          </Link>
           <Link href="/lab" className="underline-offset-4 hover:underline">
-            ← Volver al lab
+            Lab
           </Link>
         </p>
       </div>

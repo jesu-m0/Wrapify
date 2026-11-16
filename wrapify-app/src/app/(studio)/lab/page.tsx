@@ -9,7 +9,7 @@ import { cssVars, HUES, Hue, Mark } from "@/lab/studio/ui";
 
 const PAGES: { href: string; name: string; pitch: string; tags: string[]; hue: Hue; motif: "bento" | "eq" }[] = [
   {
-    href: "/lab/studio",
+    href: "/",
     name: "Studio",
     pitch: "El dashboard, repensado: pestañas, filtro por año, una ficha por artista y una máquina del tiempo que reproduce tu historial.",
     tags: ["Interactiva", "Bento", "Modo play"],
@@ -94,8 +94,8 @@ export default function LabIndex() {
           </div>
 
           <p className="mt-10 text-sm font-medium" style={{ color: "var(--muted)" }}>
-            <Link href="/" className="underline-offset-4 hover:underline">
-              ← Volver al dashboard actual
+            <Link href="/classic" className="underline-offset-4 hover:underline">
+              Ver el dashboard clásico →
             </Link>
           </p>
         </div>

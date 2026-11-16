@@ -19,7 +19,7 @@ import { ReactNode, useEffect, useId, useState } from "react";
 export const INK = "#1e1728";
 export const CREAM = "#f6f0e4";
 /** Ink for details sitting on a coloured shape: never swapped to cream in a dark favicon. */
-const INK_FIXED = "#1e1727";
+export const INK_FIXED = "#1e1727";
 
 export type Pal = { k: string; w: string; co: string; li: string; mono: boolean };
 
@@ -31,20 +31,20 @@ export function pal(dark = false, mono = false): Pal {
 
 /* ── SMIL helpers ── */
 
-const EASE = "0.45 0 0.55 1";
-const SNAP = "0.2 0.85 0.3 1";
-const LIN = "0 0 1 1";
-const UP = "0.2 0.75 0.4 1";
-const DOWN = "0.6 0 0.8 0.25";
+export const EASE = "0.45 0 0.55 1";
+export const SNAP = "0.2 0.85 0.3 1";
+export const LIN = "0 0 1 1";
+export const UP = "0.2 0.75 0.4 1";
+export const DOWN = "0.6 0 0.8 0.25";
 
 type Val = number | string;
-type Track = { v: Val[]; t: number[] };
-type Key = [number, Val];
+export type Track = { v: Val[]; t: number[] };
+export type Key = [number, Val];
 
 const r4 = (x: number) => +x.toFixed(4);
 const fmt = (x: Val) => (typeof x === "number" ? String(+x.toFixed(2)) : x);
-const even = (v: Val[]): Track => ({ v, t: v.map((_, i) => i / (v.length - 1)) });
-const keys = (k: Key[]): Track => ({ v: k.map((x) => x[1]), t: k.map((x) => x[0]) });
+export const even = (v: Val[]): Track => ({ v, t: v.map((_, i) => i / (v.length - 1)) });
+export const keys = (k: Key[]): Track => ({ v: k.map((x) => x[1]), t: k.map((x) => x[0]) });
 
 type AnimProps = { tr: Track; dur: number; begin?: number; ease?: string | string[]; discrete?: boolean };
 
@@ -62,17 +62,17 @@ function timing({ tr, dur, begin = 0, ease = EASE, discrete }: AnimProps) {
 }
 
 /** Animates one attribute through a track. */
-function A({ at, ...rest }: AnimProps & { at: string }) {
+export function A({ at, ...rest }: AnimProps & { at: string }) {
   return <animate attributeName={at} {...timing(rest)} />;
 }
 
 /** Animates the transform of its parent (rotate values are "deg cx cy", scale values "sx sy"). */
-function AT({ type, ...rest }: AnimProps & { type: "rotate" | "scale" | "translate" }) {
+export function AT({ type, ...rest }: AnimProps & { type: "rotate" | "scale" | "translate" }) {
   return <animateTransform attributeName="transform" type={type} {...timing(rest)} />;
 }
 
 /** Applies a scale animation around (cx, cy). */
-function Around({ cx, cy, anim, children }: { cx: number; cy: number; anim?: ReactNode; children: ReactNode }) {
+export function Around({ cx, cy, anim, children }: { cx: number; cy: number; anim?: ReactNode; children: ReactNode }) {
   return (
     <g transform={`translate(${cx} ${cy})`}>
       <g>
@@ -103,7 +103,7 @@ type BarProps = {
 };
 
 /** A pill whose height can be animated while it stays anchored. */
-function Bar({ x, w, at, h, fill, align = "bottom", on, hs, dur = 1.6, begin = 0, ease, opacity, stroke, sw, children }: BarProps) {
+export function Bar({ x, w, at, h, fill, align = "bottom", on, hs, dur = 1.6, begin = 0, ease, opacity, stroke, sw, children }: BarProps) {
   const y = (hh: number) => (align === "bottom" ? at - hh : align === "top" ? at : at - hh / 2);
   return (
     <rect x={x} y={y(h)} width={w} height={h} rx={w / 2} fill={fill} opacity={opacity} stroke={stroke} strokeWidth={sw}>
@@ -488,7 +488,7 @@ function Caramelo({ p, on }: MP) {
   );
 }
 
-function useClock(on: boolean) {
+export function useClock(on: boolean) {
   const [t, setT] = useState(0);
   useEffect(() => {
     if (!on) return;
@@ -714,16 +714,36 @@ function Pastilla({ p, on }: MP) {
 
 /* ── Catalogue ── */
 
+export type TileHue = "coral" | "sun" | "pink" | "lilac" | "mint" | "sky" | "ink";
+export type TileShape = "soft" | "round" | "square" | "leaf";
+
+/** How a mark is painted: page theme, one-ink version and, for round-2 marks, the tile's colour and shape. */
+export type Look = { dark?: boolean; mono?: boolean; hue?: TileHue | null; shape?: TileShape };
+
 export type LogoDef = {
   id: string;
   n: string;
   name: string;
   family: string;
   concept: string;
-  Mark: (props: MP) => ReactNode;
+  round: 1 | 2;
+  /** round 2: numbers of the round-1 marks it grows from */
+  from?: string[];
+  /** round 2: the tile colour it was designed with */
+  hue?: TileHue;
+  draw: (look: Look, on: boolean) => ReactNode;
 };
 
-const RAW: Omit<LogoDef, "n" | "id">[] = [
+export const slug = (s: string) =>
+  s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/\s+/g, "-");
+
+type Raw = { name: string; family: string; concept: string; Mark: (props: MP) => ReactNode };
+
+const RAW: Raw[] = [
   {
     name: "Pulso",
     family: "Afinados",
@@ -851,17 +871,18 @@ const RAW: Omit<LogoDef, "n" | "id">[] = [
   },
 ];
 
-export const LOGOS: LogoDef[] = RAW.map((l, i) => ({
+export const LOGOS: LogoDef[] = RAW.map(({ Mark, ...l }, i) => ({
   ...l,
+  round: 1,
   n: String(i + 1).padStart(2, "0"),
-  id: l.name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, "-"),
+  id: slug(l.name),
+  draw: (look: Look, on: boolean) => <Mark p={pal(look.dark, look.mono)} on={on} />,
 }));
 
-export function Logo({ def, size, p, on, className }: { def: LogoDef; size: number; p: Pal; on: boolean; className?: string }) {
-  const M = def.Mark;
+export function Logo({ def, size, look = {}, on, className }: { def: LogoDef; size: number; look?: Look; on: boolean; className?: string }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width={size} height={size} className={className} aria-hidden>
-      <M p={p} on={on} />
+      {def.draw(look, on)}
     </svg>
   );
 }

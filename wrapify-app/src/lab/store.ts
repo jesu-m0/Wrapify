@@ -6,7 +6,7 @@ import { processRawStreams } from "@/lib/process-data";
 
 /**
  * Tiny module-level store so the lab pages share the loaded history:
- * load it once, then jump between /lab/* routes without uploading again.
+ * load it once, then jump between / and the /lab/* routes without uploading again.
  */
 let current: SpotifyStream[] | null = null;
 const listeners = new Set<() => void>();
